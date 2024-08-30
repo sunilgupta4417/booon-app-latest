@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,18 +18,33 @@ const FilterScreen = ({
   close,
   appliedFilter
 }) => {
-  console.log('-=-=-=-==', appliedFilter);
-  
   const [selectedCategory, setSelectedCategory] = useState(initialFilter);
-  // const appliedFilterData = appliedFilter
   const [price, setPrice] = useState('');
-  const [gender, setGender] = useState(false);
-  const [sizeFilters, setSizeFilters] = useState({});
-  const [categoryFilter, setcategoryFilter] = useState({});
-  const [discountFilter, setDiscountFilters] = useState('');
-  const [colorFilters, setColorFilters] = useState({});
-  const [brandFilters, setBrandFilters] = useState({});
+  const [gender, setGender] = useState('');
+  const [size, setsize] = useState([]);
+  const [subsubcat_id, setsubsubcat_id] = useState([]);
+  const [discount_value, setdiscount_values] = useState('');
+  const [color, setcolor] = useState([]);
+  const [brandname, setbrandname] = useState([]);
+  const [short, setshort] = useState(appliedFilter?.short && appliedFilter?.short || '');
   const [screenData, setScreenData] = useState(data || {}); 
+  useEffect(()=>{
+    if(selectedCategory == 'discount'){
+      setdiscount_values(appliedFilter?.discount_value && appliedFilter?.discount_value !== '' ? appliedFilter?.discount_value : '')
+    }else if(selectedCategory == 'category'){
+      setsubsubcat_id(appliedFilter?.subsubcat_id?.length > 0 ? appliedFilter?.subsubcat_id : [])
+    }else if(selectedCategory == 'price'){
+      setPrice(appliedFilter?.price !== '' ? appliedFilter?.price:'')
+    }else if(selectedCategory == 'gender'){
+      setGender(appliedFilter?.gender !== '' ? appliedFilter?.gender:'')
+    }else if(selectedCategory == 'size'){
+      setsize(appliedFilter?.size?.length > 0 ? appliedFilter?.size : [])
+    }else if(selectedCategory == 'color'){
+      setcolor(appliedFilter?.color?.length > 0 ? appliedFilter?.color:[])
+    }else if(selectedCategory == 'brand'){
+      setbrandname(appliedFilter?.brandname?.length > 0 ? appliedFilter?.brandname:[])
+    }
+  },[selectedCategory])
 
   const renderContent = () => {
     const style = {
@@ -78,17 +93,17 @@ const FilterScreen = ({
       case 'discount':
         return (
           <View>
-            {(screenData?.discount || []).map(option => (
+            {[...screenData?.discount].map(option => (
               <TouchableOpacity
                 key={option?.label}
                 style={styles.option}
-                onPress={() => setDiscountFilters(option?.discount_value)}>
+                onPress={() => setdiscount_values(option?.discount_value)}>
                 <Text
                   style={{
                     fontWeight:
-                      discountFilter == option?.discount_value ? '600' : '400',
+                      discount_value == option?.discount_value ? '600' : '400',
                     color:
-                      discountFilter == option?.discount_value
+                      discount_value == option?.discount_value
                         ? '#111111'
                         : '#64646D',
                   }}>
@@ -101,22 +116,21 @@ const FilterScreen = ({
 
       case 'size':
         return (
-          <View>
+          <ScrollView>
             {[...screenData?.size].map(option => (
               <View key={option?.name} style={styles.option}>
                 <Checkbox
-                  status={sizeFilters[option?.name] ? 'checked' : 'unchecked'}
+                  status={size.includes(option?.name) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    setSizeFilters(prev => ({
-                      ...prev,
-                      [option?.name]: !prev[option?.name],
-                    }));
+                    let sizefilter = [...size]
+                    sizefilter.push(option?.name)
+                    setsize(sizefilter)
                   }}
                 />
                 <Text style={style}>{option?.name}</Text>
               </View>
             ))}
-          </View>
+          </ScrollView>
         );
       case 'color':
         return (
@@ -124,12 +138,11 @@ const FilterScreen = ({
             {[...screenData?.color].map(color => (
               <View key={color?.name} style={styles.option}>
                 <Checkbox
-                  status={colorFilters[color?.name] ? 'checked' : 'unchecked'}
+                  status={color.includes(color?.name) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    setColorFilters(prev => ({
-                      ...prev,
-                      [color?.name]: !prev[color?.name],
-                    }));
+                    let colorfilter = [...color]
+                    colorfilter.push(color?.name)
+                    setcolor(colorfilter);
                   }}
                 />
                 <Text style={style}>
@@ -140,19 +153,17 @@ const FilterScreen = ({
           </ScrollView>
         );
 
-      // colorFilters[color?.name] ? 'checked' :
       case 'category':
         return (
           <ScrollView>
             {[...screenData?.category].map(category => (
-              <View key={category?.name} style={styles.option}>
+              <View key={category?.cat_id} style={styles.option}>
                 <Checkbox
-                  status={categoryFilter[category?.name] ? 'checked' : 'unchecked'}
+                  status={subsubcat_id.includes(category?.cat_id) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    setcategoryFilter(prev => ({
-                      ...prev,
-                      [category?.name]: !prev[category?.name],
-                    }));
+                    let subsubcat_id = [...subsubcat_id]
+                    subsubcat_id.push(category?.cat_id)
+                    setsubsubcat_id(subsubcat_id);
                   }}
                 />
                 <Text style={style}>{category?.name}</Text>
@@ -167,13 +178,12 @@ const FilterScreen = ({
               <View key={brand?.brandname} style={styles.option}>
                 <Checkbox
                   status={
-                    brandFilters[brand?.brandname] ? 'checked' : 'unchecked'
+                    brandname.includes(brand?.brandname) ? 'checked' : 'unchecked'
                   }
                   onPress={() => {
-                    setBrandFilters(prev => ({
-                      ...prev,
-                      [brand?.brandname]: !prev[brand?.brandname],
-                    }));
+                    let brandfilter = [...brandname]
+                    brandfilter.push(brand?.brandname)
+                    setbrandname(brandfilter);
                   }}
                 />
                 <Text style={style}>{brand?.brandname}</Text>
@@ -188,26 +198,28 @@ const FilterScreen = ({
   };
   const onComplete = () => {
     const payload = {
-      brandFilters,
-      colorFilters,
-      sizeFilters,
+      brandname,
+      color,
+      size,
       gender,
-      discountFilter,
+      discount_value,
       price,
-      categoryFilter
+      subsubcat_id,
+      short
     };
 
     close(payload);
   };
 
   const onClearAll = () => {
-    setGender({});
-    setSizeFilters({});
-    setColorFilters({});
-    setBrandFilters({});
-    setScreenData({});
-    setcategoryFilter({})
-    setGender(false)
+    setGender('');
+    setsize([]);
+    setdiscount_values('');
+    setcolor([]);
+    setbrandname([]);
+    setPrice('');
+    setshort('')
+    setsubsubcat_id([])
     close({});
   };
   

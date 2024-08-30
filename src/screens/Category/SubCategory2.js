@@ -49,11 +49,12 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   const [filterObjToData, setfilterObjToData] = useState(null)
   const [noData, setnoData] = useState('')
   const [filterModal, setFilterModal] = useState(false);
+  const [AppliedFilter, setAppliedFilter] = useState({})
   const sortFiterlist = [
-    {lable:'Newest First',value:'new'},
-    {lable:'Popularity',value:'popular'},
-    {lable:'Price - High to Low',value:'high_to_low'},
-    {lable:'Price - Low to High',value:'low_to_high'}
+    { lable: 'Newest First', value: 'new' },
+    { lable: 'Popularity', value: 'popular' },
+    { lable: 'Price - High to Low', value: 'high_to_low' },
+    { lable: 'Price - Low to High', value: 'low_to_high' }
   ]
 
   useEffect(() => {
@@ -170,6 +171,12 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     if (no_of_item) {
       body.no_of_item = no_of_item;
     }
+
+    if (body.discount_value) {
+      body.type = 'discount'
+    }
+    console.log('-=-=-=-filter body-=-=-=', body);
+
     const response = await axios.post(`${BASE_URL}/product-list`, body);
     if (response.status === 200) {
       setIsLoading(false)
@@ -339,43 +346,60 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     );
   };
 
-  const _handleGenderFilter = (gender) => {
-    // let genders = {gender:gender}
-    // Alert.alert('-=-=-=-=-', {...filterSort.current, gender});
-    
-    // closeFilterApply()
+  const _handleGenderFilter = (genderVAl) => {
+    setGender(genderVAl)
+    let genders = {gender:genderVAl}
+    setGenderModal(false)
+    closeFilterApply({...AppliedFilter, ...genders})
+  }
+
+  const _handleSizeFIlter = () => {
+  let size = {size:selectedSizes}
+    setSizeModal(false)
+    closeFilterApply({...AppliedFilter, ...size})
+  }
+
+  const _handleSortBy = (sort) => {
+    setSortBy(sort);
+    let short = {short:sort}
+    setSortModal(false)
+    closeFilterApply({...AppliedFilter, ...short})
   }
 
   const closeFilterApply = (value) => {
     if (Object.keys(value).length > 0) {
+      setAppliedFilter(value)
       let filterValue = {};
-      if (Object.keys(value.brandFilters).length > 0) {
-        let keys = Object.keys(value.brandFilters).join(',');
-        filterValue.brandname = keys;
+      if (value?.brandname?.length) {
+        filterValue.brandname = value.brandname.join(',');
       }
 
-      if (Object.keys(value.colorFilters).length > 0) {
-        let keys = Object.keys(value.colorFilters).join(',');
-        filterValue.color = keys;
+      if (value?.color?.length) {
+        filterValue.color = value.color.join(',')
       }
 
-      if (value.gender) {
+      if (value?.subsubcat_id?.length) {
+        filterValue.subsubcat_id = value.subsubcat_id.join(',');
+      }
+
+      if (value?.gender && value?.gender !== '') {
         filterValue.gender = value.gender;
       }
 
-      if (Object.keys(value.sizeFilters).length > 0) {
-        let keys = Object.keys(value.sizeFilters).join(',');
-        filterValue.size = keys;
+      if (value?.short && value?.short !== '') {
+        filterValue.short = value.short;
       }
 
-      if (Object.keys(value.sortBy).length > 0) {
+      if (value?.size?.length) {
+        setSelectedSizes(value?.size)
+        filterValue.size = value.size.join(',');
       }
 
-      if (value?.discountFilter !== '') {
-        filterValue.discount_value = value?.discountFilter;
+      if (value?.discount_value && (value?.discount_value !== '' || value?.discount_value !== undefined)) {
+        filterValue.discount_value = value?.discount_value;
       }
 
-      if (value?.price !== '') {
+      if (value?.price && value?.price !== '') {
         filterValue.price = value?.price;
       }
       filterSort.current = filterValue;
@@ -391,14 +415,14 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   return (
     <SafeAreaView style={styles.container}>
       <CustomHeader title={params.title} back search wishlist bag />
-      {subCategoryData?.length > 0 ? <FlatList
+      <FlatList
         data={subCategoryData}
         renderItem={renderSubCategory}
         numColumns={2}
         style={{ borderWidth: 0 }}
         keyExtractor={(item, index) => index + ''}
         onEndReached={handleLoadMore}
-        onEndReachedThreshold={10}
+        onEndReachedThreshold={0.5}
         ListHeaderComponent={() => (
           <>
             <View style={params.bannerData || params.brandname || params.height ? {} : { height: 100 }}>
@@ -447,11 +471,11 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           )
         }
       />
-      :
+      {/* :
       <View style={{justifyContent:'center',alignItems:'center'}}>
         <Text>No Vendor available for you location</Text>
       </View>
-      }
+      } */}
       <FilterModal
         isVisible={sortModal}
         onBackButtonPress={() => {
@@ -462,7 +486,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         animationInTiming={500}
         animationOutTiming={500}
         style={{ justifyContent: "flex-end", margin: 0, }}>
-        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0,padding: 15,}}>
+        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
           <View style={[styles.modalContainer]}>
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={() => setSortModal(false)}>
@@ -476,9 +500,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
             <View style={styles.modalOptions}>
               {sortFiterlist.map(sort => (
                 <TouchableOpacity
-                  onPress={() => {
-                    setSortBy(sort.value);
-                  }}
+                  onPress={() => _handleSortBy(sort.value)}
                   key={sort.value}
                   style={styles.option}>
                   <Text
@@ -505,7 +527,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         animationInTiming={500}
         animationOutTiming={500}
         style={{ justifyContent: "flex-end", margin: 0, }}>
-        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0,padding: 15,}}>
+        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
           <View
             style={[styles.modalContainer]}>
             <View style={styles.modalHeader}>
@@ -520,7 +542,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
             <View style={[styles.modalOptions, { paddingTop: 10 }]}>
               {filterData?.gender?.map(gen => (
                 <TouchableOpacity
-                  onPress={()=>_handleGenderFilter(gen)}
+                  onPress={() => _handleGenderFilter(gen)}
                   key={gen}
                   style={styles.option}>
                   <Text
@@ -547,7 +569,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         animationInTiming={500}
         animationOutTiming={500}
         style={{ justifyContent: "flex-end", margin: 0, }}>
-        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0,padding: 15,}}>
+        <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={() => setSizeModal(false)}>
@@ -558,33 +580,62 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Size</Text>
             </View>
-            <View style={{maxHeight:300}}>
-            <ScrollView style={styles.modalOptions}>
-              {filterData?.size?.map(size => (
-                <View key={size.name} style={styles.option}>
-                  <CheckBox
-                    value={selectedSizes.includes(size.name)}
-                    onValueChange={() => toggleSize(size.name)}
-                    boxType="square"
-                    onAnimationType="fade"
-                    offAnimationType="fade"
-                    onCheckColor="grey"
-                    onTintColor="grey"
-                    style={{ height: 25, width: 25 }}
-                  />
-                  <Text
-                    style={{
-                      marginLeft: 16,
-                      color: '#64646D',
-                      fontSize: 14,
-                      fontWeight: '400',
-                      fontFamily: 'Poppins',
-                    }}>
-                    {size.name}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
+            <View style={{ maxHeight: 300 }}>
+              <FlatList 
+                data={filterData?.size}
+                extraData={filterData?.size}
+                numColumns={3}
+                renderItem={({item})=>(
+                  <View key={item.name} style={[styles.option,{width:'33%'}]}>
+                    <CheckBox
+                      value={selectedSizes.includes(item.name)}
+                      onValueChange={() => toggleSize(item.name)}
+                      boxType="square"
+                      onAnimationType="fade"
+                      offAnimationType="fade"
+                      onCheckColor="grey"
+                      onTintColor="grey"
+                      style={{ height: 25, width: 25 }}
+                    />
+                    <Text
+                      style={{
+                        marginLeft: 16,
+                        color: '#64646D',
+                        fontSize: 14,
+                        fontWeight: '400',
+                        fontFamily: 'Poppins',
+                      }}>
+                      {item.name}
+                    </Text>
+                  </View>
+                )}
+              />
+              {/* <ScrollView style={styles.modalOptions}>
+                {filterData?.size?.map(size => (
+                  <View key={size.name} style={styles.option}>
+                    <CheckBox
+                      value={selectedSizes.includes(size.name)}
+                      onValueChange={() => toggleSize(size.name)}
+                      boxType="square"
+                      onAnimationType="fade"
+                      offAnimationType="fade"
+                      onCheckColor="grey"
+                      onTintColor="grey"
+                      style={{ height: 25, width: 25 }}
+                    />
+                    <Text
+                      style={{
+                        marginLeft: 16,
+                        color: '#64646D',
+                        fontSize: 14,
+                        fontWeight: '400',
+                        fontFamily: 'Poppins',
+                      }}>
+                      {size.name}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView> */}
             </View>
             <View style={styles.footer}>
               <TouchableOpacity
@@ -594,7 +645,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyButton}
-                onPress={() => setSizeModal(false)}>
+                onPress={_handleSizeFIlter}>
                 <Text style={styles.applyButtonText}>Apply</Text>
               </TouchableOpacity>
             </View>
@@ -616,10 +667,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           <FilterScreen
             initialFilter={filterTypeRef}
             data={filterData}
-            appliedFilter={filterSort.current}
-            // cat_id={params?.cat_id}
-            // subcat_id={params?.subcat_id}
-            // subCategoryId={subCategoryId?.current}
+            appliedFilter={AppliedFilter}
             onOnlyClose={() => {
               setFilterModal(false);
             }}
