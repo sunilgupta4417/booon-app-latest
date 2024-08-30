@@ -5,114 +5,255 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import {Image, LogBox, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect} from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import SplashScreen from './src/screens/onboarding/SplashScreen';
+import GetStarted from './src/screens/onboarding/GetStarted';
+import SelectLocation from './src/screens/onboarding/SelectLocation';
+import SearchLocation from './src/screens/onboarding/SearchLocation';
+import HomeScreen from './src/screens/Home/HomeScreen';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import Category from './src/screens/Category/Category';
+import Occassion from './src/screens/Occassion/Occassion';
+import Account from './src/screens/Account/Account';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Address from './src/screens/Account/Address';
+import Wishlist from './src/screens/Account/Wishlist';
+import AddAddress from './src/screens/Account/AddAddress';
+import SubCategory from './src/screens/Category/SubCategory';
+import SubCategory2 from './src/screens/Category/SubCategory2';
+import Login from './src/screens/onboarding/Login';
+import OTPScreen from './src/screens/onboarding/OTPScreen';
+import ProductScreen from './src/screens/Category/ProductScreen';
+import BagScreen from './src/screens/Account/BagScreen';
+import {Provider} from 'react-redux';
+import {store} from './src/redux/store/Store';
+import WebViewComp from './src/components/WebViewComp';
+import OrderSuccess from './src/screens/orders/OrderSuccess';
+import {getUniqueId, getManufacturer} from 'react-native-device-info';
+import WebViewPage from './src/screens/Account/webview_page';
+import {useMMKVString} from 'react-native-mmkv';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const queryClient = new QueryClient();
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+// OrderSuccess
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function AccountStack() {
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+    <Stack.Navigator initialRouteName="Main">
+      <Stack.Screen
+        name="Account"
+        component={Account}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Address"
+        component={Address}
+        options={{headerShown: false}}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function MyTabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          headerShown: false,
+          tabBarIcon: () => (
+            <View
+              style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
+              <Image
+                source={require('./src/assets/Home.png')}
+                style={{width: 24, height: 24}}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Category"
+        component={Category}
+        options={{
+          headerShown: false,
+          tabBarIcon: () => (
+            <View
+              style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
+              <Image
+                source={require('./src/assets/category.png')}
+                style={{width: 18, height: 18}}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Occassion"
+        component={Occassion}
+        options={{
+          headerShown: false,
+          tabBarIcon: () => (
+            <View
+              style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
+              <Image
+                source={require('./src/assets/occassion.png')}
+                style={{width: 24, height: 24}}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Account"
+        component={AccountStack}
+        options={{
+          headerShown: false,
+          tabBarIcon: () => (
+            <View
+              style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
+              <Image
+                source={require('./src/assets/acc1.png')}
+                style={{width: 7, height: 7, margin: 2}}
+              />
+              <Image
+                source={require('./src/assets/acc2.png')}
+                style={{width: 13, height: 5}}
+              />
+            </View>
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+function Stacks() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="SplashScreen"
+        component={SplashScreen}
+        options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="WebViewPage"
+        component={WebViewPage}
+        options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="GetStarted"
+        component={GetStarted}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="SelectLocation"
+        component={SelectLocation}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="SearchLocation"
+        component={SearchLocation}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="HomeScreen"
+        component={MyTabs}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="OrderSuccess"
+        component={OrderSuccess}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Wishlist"
+        component={Wishlist}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="AddAddress"
+        component={AddAddress}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="SubCategory"
+        component={SubCategory}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="SubCategory2"
+        component={SubCategory2}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Login"
+        component={Login}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="OTPScreen"
+        component={OTPScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="ProductScreen"
+        component={ProductScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="BagScreen"
+        component={BagScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="WebViewComp"
+        component={WebViewComp}
+        options={{headerShown: false}}
+      />
+    </Stack.Navigator>
   );
 }
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  LogBox.ignoreAllLogs();
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const uniqueID = async () => {
+    const id = await getUniqueId();
+    // alert(JSON.stringify(id))
+    global.deviceId = id;
   };
 
+  useEffect(() => {
+    uniqueID();
+  }, []);
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <NavigationContainer>
+          <Stacks />
+        </NavigationContainer>
+      </Provider>
+    </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+  
 });
 
 export default App;
