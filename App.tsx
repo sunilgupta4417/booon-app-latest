@@ -34,6 +34,7 @@ import WebViewComp from './src/components/WebViewComp';
 import OrderSuccess from './src/screens/orders/OrderSuccess';
 import {getUniqueId, getManufacturer} from 'react-native-device-info';
 import WebViewPage from './src/screens/Account/webview_page';
+import SearchProduct from './src/screens/Home/SearchProduct';
 import {useMMKVString} from 'react-native-mmkv';
 import {
   useQuery,
@@ -68,19 +69,21 @@ function AccountStack() {
 
 function MyTabs() {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
+          tabBarShowLabel:false,
           headerShown: false,
-          tabBarIcon: () => (
+          tabBarIcon: ({focused}) => (
             <View
               style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
               <Image
-                source={require('./src/assets/Home.png')}
-                style={{width: 24, height: 24}}
+                source={focused ? require('./src/assets/Home/Home-dark.png'): require('./src/assets/Home/home-outline.png')}
+                style={{width: 18, height: 18, resizeMode:'contain'}}
               />
+              <Text style={{fontSize:14,fontWeight:focused?'700':'500',color:'#000'}}>Home</Text>
             </View>
           ),
         }}
@@ -90,13 +93,15 @@ function MyTabs() {
         component={Category}
         options={{
           headerShown: false,
-          tabBarIcon: () => (
+          tabBarShowLabel:false,
+          tabBarIcon: ({focused}) => (
             <View
               style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
               <Image
-                source={require('./src/assets/category.png')}
-                style={{width: 18, height: 18}}
+                source={focused ? require('./src/assets/Home/Cat-dark.png'): require('./src/assets/Home/Cat-Outline.png')}
+                style={{width: 18, height: 18, resizeMode:'contain'}}
               />
+              <Text style={{fontSize:14,fontWeight:focused?'700':'500',color:'#000'}}>Category</Text>
             </View>
           ),
         }}
@@ -106,13 +111,15 @@ function MyTabs() {
         component={Occassion}
         options={{
           headerShown: false,
-          tabBarIcon: () => (
+          tabBarShowLabel:false,
+          tabBarIcon: ({focused}) => (
             <View
               style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
               <Image
-                source={require('./src/assets/occassion.png')}
-                style={{width: 24, height: 24}}
+                source={focused ? require('./src/assets/Home/Occision-dark.png'): require('./src/assets/Home/Occasion-outline.png')}
+                style={{width: 18, height: 18, resizeMode:'contain'}}
               />
+              <Text style={{fontSize:14,fontWeight:focused?'700':'500',color:'#000'}}>Occasion</Text>
             </View>
           ),
         }}
@@ -122,17 +129,15 @@ function MyTabs() {
         component={AccountStack}
         options={{
           headerShown: false,
-          tabBarIcon: () => (
+          tabBarShowLabel:false,
+          tabBarIcon: ({focused}) => (
             <View
               style={{alignItems: 'center', justifyContent: 'center', top: 2}}>
               <Image
-                source={require('./src/assets/acc1.png')}
-                style={{width: 7, height: 7, margin: 2}}
+                source={focused ? require('./src/assets/Home/user-dark.png'): require('./src/assets/Home/user-outline.png')}
+                style={{width: 18, height: 18, resizeMode:'contain'}}
               />
-              <Image
-                source={require('./src/assets/acc2.png')}
-                style={{width: 13, height: 5}}
-              />
+              <Text style={{fontSize:14,fontWeight:focused?'700':'500',color:'#000'}}>Account</Text>
             </View>
           ),
         }}
@@ -173,6 +178,11 @@ function Stacks() {
       <Stack.Screen
         name="HomeScreen"
         component={MyTabs}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="SearchProduct"
+        component={SearchProduct}
         options={{headerShown: false}}
       />
       <Stack.Screen

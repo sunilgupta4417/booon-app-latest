@@ -160,6 +160,7 @@ const HomeScreen = ({ navigation }) => {
   const [testimonial, setTestimonial] = useState([]);
   const [currentLocation, setCurrentLocation] = useState();
   const [addressChange, setaddressChange] = useState('false')
+  const [SearchText, setSearchText] = useState('')
   const { data: addressDetail, isLoading } = useQuery({
     queryKey: ['address'],
     queryFn: getAddressList,
@@ -188,30 +189,6 @@ const HomeScreen = ({ navigation }) => {
       Allfunc();
     }, []),
   );
-  
-  const productSearchingHook = async (searchText) => {
-    try {
-      const response = await fetch('https://swiftbird-hxyrcg0.an.gateway.dev/swiftbird/browse/search/'+searchText, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          pageNo: 1,
-          pageSize: 10
-        })
-      });
-  
-      const result = await response.json();
-      // Alert.alert(JSON.stringify(result))
-      // setData(result); // Assuming the API response is an array of items
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      // setLoading(false);
-    }
-  };
   const getHeaderCategory = async () => {
     const response = await axios.get(`${BASE_URL}/header-category`);
     if (response.status == 200) {
@@ -299,11 +276,11 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const _getUserCurrentLocation = async () => {
-    if(addressDetail?.data?.length > 0 ){
-      await AsyncStorage.setItem('addressChange', 'false');
-    }else{
-      await AsyncStorage.setItem('addressChange', 'true');
-    }
+    // if(addressDetail?.data?.length > 0 ){
+    //   await AsyncStorage.setItem('addressChange', 'false');
+    // }else{
+    //   await AsyncStorage.setItem('addressChange', 'true');
+    // }
     const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
     const addressChanged = await AsyncStorage.getItem('addressChange');
     id = JSON.parse(userCurrentLocation)
@@ -311,6 +288,10 @@ const HomeScreen = ({ navigation }) => {
     setaddressChange(addressChanged)
     setCurrentLocation(JSON.parse(userCurrentLocation))
   }
+
+  useEffect(()=>{
+    _getUserCurrentLocation()
+  },[currentLocation])
   
 
   const goToProductList = item => {
@@ -341,9 +322,9 @@ const HomeScreen = ({ navigation }) => {
             <Text
               style={{
                 fontSize: 11,
-                fontWeight: '600',
-                fontFamily: 'Poppins',
-                lineHeight: 14,
+                // fontWeight: '600',
+                fontFamily: 'Poppins-Medium',
+                lineHeight: 20,
                 color: '#000000',
               }}>
               {item.title}
@@ -376,7 +357,7 @@ const HomeScreen = ({ navigation }) => {
       <TouchableOpacity
       key={index+'brand'}
         onPress={() =>
-          navigation.navigate('SubCategory2', { brandname: item.brand_name })
+          navigation.navigate('SubCategory2', { brandname: item.brand_name, title:item.brand_name})
         }>
         <Image
           style={{
@@ -436,8 +417,8 @@ const HomeScreen = ({ navigation }) => {
           <Text
             style={{
               fontSize: 14,
-              fontWeight: Platform.OS == 'android' ? '700' : '500',
-              fontFamily: 'Poppins',
+              // fontWeight: Platform.OS == 'android' ? '700' : '500',
+              fontFamily: 'Poppins-SemiBold',
               lineHeight: 21,
               color: '#000000',
             }}>
@@ -446,9 +427,9 @@ const HomeScreen = ({ navigation }) => {
           <Text
             style={{
               fontSize: 12,
-              fontWeight: '400',
+              // fontWeight: '400',
               lineHeight: 18,
-              fontFamily: 'Poppins',
+              fontFamily: 'Poppins-Medium',
               color: '#000000',
             }}>
             {subtitle}
@@ -528,6 +509,10 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('SearchLocation')
   }
 
+  const navigateSearchScreen = () => {
+    navigation.navigate('SearchProduct')
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* <SearchModalRef ref={searchRef} /> */}
@@ -555,8 +540,9 @@ const HomeScreen = ({ navigation }) => {
                 style={[
                   styles.headerSubtitle,
                 ]}>
-                  {addressChange == 'false' && addressDetail?.data?.length > 0
-                  && <Text style={styles.headerTitle}>{addressDetail?.data[0]?.add_type + ', '}</Text>}
+                  {addressChange == 'false' ? addressDetail?.data?.length > 0
+                  && <Text style={styles.headerTitle}>{addressDetail?.data[0]?.add_type + ', '}</Text>:
+                  <Text style={styles.headerTitle}>{currentLocation?.add_type !== undefined && currentLocation?.add_type+', '}</Text>}
                 {addressChange == 'false' ? addressDetail?.data?.length > 0
                   && addressDetail?.data[0]?.address
                   : currentLocation?.address}
@@ -588,7 +574,7 @@ const HomeScreen = ({ navigation }) => {
                   top: 0,
                   zIndex: 1,
                 }}>
-                <Text style={{ color: 'white', fontSize: 8 }}>
+                <Text style={{ color: 'white', fontSize: 8,fontFamily:'Poppins-Medium' }}>
                   {wish_list_count}
                 </Text>
               </View>
@@ -613,7 +599,7 @@ const HomeScreen = ({ navigation }) => {
                   top: 0,
                   zIndex: 1,
                 }}>
-                <Text style={{ color: 'white', fontSize: 8 }}>{cart_count}</Text>
+                <Text style={{ color: 'white', fontSize: 8,fontFamily:'Poppins-Medium' }}>{cart_count}</Text>
               </View>
             )}
             <Image
@@ -624,20 +610,22 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
       <ScrollView style={{ flex: 1 }}>
-        <View style={styles.txtIpBox}>
+        <TouchableOpacity style={styles.txtIpBox} onPress={navigateSearchScreen}>
           <Image
             style={styles.SearchIcon}
             source={require('../../assets/Search.png')}
           />
-          <TextInput
-            // onSubmitEditing={text => {
-            //   // searchRef.current.setShowModal(true);
-            //   productSearchingHook(text);
-            // }}
+          <View >
+            <Text style={styles.txtIp}>Search for products, brand and more...</Text>
+          </View>
+          {/* <TextInput
+          onChangeText={(text)=>setSearchText(text)}
+          value={SearchText}
+            onSubmitEditing={productSearchingHook}
             placeholder="Search for products, brand and more..."
             style={styles.txtIp}
-          />
-        </View>
+          /> */}
+        </TouchableOpacity>
         <FlatList
           data={headerCatData}
           renderItem={renderHeaderCat}
@@ -676,7 +664,7 @@ const HomeScreen = ({ navigation }) => {
         <View
           style={{
             flexDirection: 'row',
-            width: '95%',
+            width: '100%',
             justifyContent: 'space-evenly',
             borderWidth: 0,
             alignSelf: 'center',
@@ -692,23 +680,23 @@ const HomeScreen = ({ navigation }) => {
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 98,
                 borderWidth: 0,
-                marginHorizontal: responsiveWidth(15),
+                width:100
+                // marginHorizontal: responsiveWidth(15),
               }}>
               <Image
-                style={{ width: 43, height: 39, margin: 15 }}
+                style={{ width: 40, height: 40,resizeMode:'contain' }}
                 source={{ uri: item.title }}
               />
               <Text
                 numberOfLines={2}
                 style={{
-                  fontSize: 12,
-                  fontWeight: '400',
+                  fontSize: 14,
+                  // fontWeight: '400',
                   alignSelf: 'center',
                   textAlign: 'center',
                   lineHeight: 16,
-                  fontFamily: 'Inter',
+                  fontFamily: 'Poppins-Medium',
                   color: '#111111',
                 }}>
                 {item.icon}
@@ -719,10 +707,10 @@ const HomeScreen = ({ navigation }) => {
         {brandData?.length > 0 && <><Text
           style={{
             fontSize: 16,
-            fontWeight: '500',
+            // fontWeight: '500',
             margin: 8,
             marginTop: 20,
-            fontFamily: 'Poppins',
+            fontFamily: 'Poppins-SemiBold',
             color: '#111111',
           }}>
           Brand Spotlight
@@ -737,10 +725,10 @@ const HomeScreen = ({ navigation }) => {
         <Text
           style={{
             fontSize: 16,
-            fontWeight: '500',
+            // fontWeight: '500',
             margin: 8,
             marginTop: 25,
-            fontFamily: 'Poppins',
+            fontFamily: 'Poppins-SemiBold',
             color: '#111111',
           }}>
           Happy Customers
@@ -771,7 +759,7 @@ const HomeScreen = ({ navigation }) => {
                 fontSize: 16,
                 fontWeight: '600',
                 lineHeight: 24,
-                fontFamily: 'Poppins',
+                fontFamily: 'Poppins-Medium',
                 color: '#FFFFFF',
               }}>
               {generalSetting?.home_contact_title}
@@ -829,9 +817,8 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '500',
     lineHeight: 16,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
     color: '#111111',
   },
   headerIcons: {
@@ -856,6 +843,7 @@ const styles = StyleSheet.create({
   txtIp: {
     padding: 5,
     flex: 1,
+    fontFamily:'Poppins-Medium'
   },
   SearchIcon: {
     width: 24,
@@ -883,9 +871,9 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 12, // Smaller text to fit in reduced height
-    fontWeight: '400',
+    // fontWeight: '400',
     lineHeight: 18,
-    fontFamily: 'Poppins',
+    fontFamily:'Poppins-Medium',
     color: '#212121',
   },
   carouselWrapper: {
@@ -907,15 +895,15 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Poppins',
+    // fontWeight: '700',
+    fontFamily: 'Poppins-Bold',
     color: '#000000',
     textAlign: 'center',
   },
   subtitle2: {
     fontSize: 12,
-    fontWeight: '500',
-    fontFamily: 'Poppins',
+    // fontWeight: '500',
+    fontFamily: 'Poppins-Medium',
     color: '#000000',
     textAlign: 'center',
   },
@@ -951,17 +939,17 @@ const styles = StyleSheet.create({
   quote: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '400',
+    // fontWeight: '400',
     marginBottom: 10,
     lineHeight: 18,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
   },
   author: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
+    // fontWeight: '600',
     lineHeight: 18,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-SemiBold',
   },
   overlayWhite: {
     backgroundColor: 'rgba(255,255,255,0.5)',

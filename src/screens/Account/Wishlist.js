@@ -6,9 +6,11 @@ import axios from 'axios'
 import { BASE_URL } from '../../config'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect } from '@react-navigation/native'
+import {useDispatch} from 'react-redux';
 
 const Wishlist = ({ navigation }) => {
   const [wishListData, setWishListData] = useState([])
+  const dispatch = useDispatch();
 
   useFocusEffect(
     useCallback(() => {
@@ -107,7 +109,7 @@ const Wishlist = ({ navigation }) => {
   }
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title={`Wishlist (${wishListData.length <= 9 ? "0" + wishListData.length : wishListData.length})`} back bag wishlist />
+      <CustomHeader title={`Wishlist (${wishListData.length <= 9 ? "0" + wishListData.length : wishListData.length})`} back />
       <FlatList
         data={wishListData}
         extraData={wishListData}
@@ -125,9 +127,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF'
   },
-  wishI:{width:30,height:30,borderRadius:50,backgroundColor:"#fff",position:'absolute',top:10,right:10,flexDirection:'row',alignItems:'center',justifyContent:'center'},
-  wishIcon:{width: 18,
-    height: 15},
+  wishI:{width:25,height:25,borderRadius:50,backgroundColor:"#fff",position:'absolute',top:10,right:10,flexDirection:'row',alignItems:'center',justifyContent:'center'},
+  wishIcon:{width: 15,
+    height: 15,resizeMode:'contain'},
   itemName: {
     fontSize: 12,
     fontWeight: Platform.OS == 'android' ? '700' : '500',

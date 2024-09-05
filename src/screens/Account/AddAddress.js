@@ -43,8 +43,6 @@ const AddAddress = ({navigation, route: {params}}) => {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const {userAddress} = useSelector(state => state.splash);
-  console.log(userAddress, 'useAddress');
-
   useEffect(() => {
     if (userAddress) {
       setAddress(userAddress?.address);
@@ -74,7 +72,7 @@ const AddAddress = ({navigation, route: {params}}) => {
         Latitude,
         Longitude,
       } = addressDetails;
-      setName(firstname + ' ' + lastname);
+      // setName(firstname + ' ' + lastname);
       setMobile(mobile);
       setAddress(address);
       setCity(city);
@@ -97,9 +95,9 @@ const AddAddress = ({navigation, route: {params}}) => {
         }
       }
       getAddressSavedList();
-      return () => {
-        dispatch(AddUserAddress(null));
-      };
+      // return () => {
+      //   dispatch(AddUserAddress(null));
+      // };
     }, [dispatch]),
   );
 
@@ -147,9 +145,28 @@ const AddAddress = ({navigation, route: {params}}) => {
       state: state,
       landmark: landmark,
       address: address,
-      zipcode: pinCode,
+      zipcode: pinCode || '',
       latitude: lat,
       longitude: lng,
+      flat_no: flat,
+      primary_address: '1',
+      // street_add:street,
+    };
+    const Sendbody = {
+      // id: params?.addressDetails ? params?.addressDetails.id :null,
+      firstname: name,
+      user_id: id?.id,
+      lastname: lastName,
+      mobile: mobile,
+      // alternate_mobile:,
+      add_type: selected,
+      city: city,
+      state: state,
+      landmark: landmark,
+      address: address,
+      zipcode: pinCode,
+      Latitude: lat,
+      Longitude: lng,
       flat_no: flat,
       primary_address: '1',
       // street_add:street,
@@ -159,7 +176,7 @@ const AddAddress = ({navigation, route: {params}}) => {
     const headers = {
       Authorization: `Bearer ${savedToken}`,
     };
-    console.log('YYYYYYYYYYYYYYYYYYYYYY', body);
+    // console.log('YYYYYYYYYYYYYYYYYYYYYY', body);
     const response = await axios.post(`${BASE_URL}/user-address`, body, {
       headers,
     });
@@ -167,7 +184,7 @@ const AddAddress = ({navigation, route: {params}}) => {
     if (response.data.status_code == 200) {
       if (params?.from == 'cart') {
         await getTokenAndAddresses()
-        params?.onAddAddress(body);
+        params?.onAddAddress(Sendbody);
         navigation.goBack();
         return;
       }else if(params?.from == 'SelectLocation'){
@@ -256,14 +273,14 @@ const AddAddress = ({navigation, route: {params}}) => {
               /> */}
               <GooglePlacesInput
                 onChangeAddress={val => {
-                  console.log(val, 'valvalval============.');
+                  // console.log(val, 'valvalval============.');
                   setAddress(val);
                 }}
                 address={address}
               />
               <View style={[styles.row, {marginBottom: 10, marginTop: 14}]}>
                 <TextInput
-                  label="Pincode*"
+                  label="Pincode"
                   value={pinCode}
                   onChangeText={text => setPinCode(text)}
                   mode="outlined"
@@ -371,6 +388,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 14,
     backgroundColor: '#ffffff',
+    fontFamily:'Poppins-Medium'
   },
   row: {
     flexDirection: 'row',

@@ -27,28 +27,29 @@ const FilterScreen = ({
   const [color, setcolor] = useState([]);
   const [brandname, setbrandname] = useState([]);
   const [short, setshort] = useState(appliedFilter?.short && appliedFilter?.short || '');
-  const [screenData, setScreenData] = useState(data || {}); 
-  useEffect(()=>{
-    if(selectedCategory == 'discount'){
+  const [screenData, setScreenData] = useState(data || {});
+  useEffect(() => {
+    if (selectedCategory == 'discount') {
       setdiscount_values(appliedFilter?.discount_value && appliedFilter?.discount_value !== '' ? appliedFilter?.discount_value : '')
-    }else if(selectedCategory == 'category'){
+    } else if (selectedCategory == 'category') {
       setsubsubcat_id(appliedFilter?.subsubcat_id?.length > 0 ? appliedFilter?.subsubcat_id : [])
-    }else if(selectedCategory == 'price'){
-      setPrice(appliedFilter?.price !== '' ? appliedFilter?.price:'')
-    }else if(selectedCategory == 'gender'){
-      setGender(appliedFilter?.gender !== '' ? appliedFilter?.gender:'')
-    }else if(selectedCategory == 'size'){
+    } else if (selectedCategory == 'price') {
+      setPrice(appliedFilter?.price !== '' ? appliedFilter?.price : '')
+    } else if (selectedCategory == 'gender') {
+      setGender(appliedFilter?.gender !== '' ? appliedFilter?.gender : '')
+    } else if (selectedCategory == 'size') {
       setsize(appliedFilter?.size?.length > 0 ? appliedFilter?.size : [])
-    }else if(selectedCategory == 'color'){
-      setcolor(appliedFilter?.color?.length > 0 ? appliedFilter?.color:[])
-    }else if(selectedCategory == 'brand'){
-      setbrandname(appliedFilter?.brandname?.length > 0 ? appliedFilter?.brandname:[])
+    } else if (selectedCategory == 'color') {
+      setcolor(appliedFilter?.color?.length > 0 ? appliedFilter?.color : [])
+    } else if (selectedCategory == 'brand') {
+      setbrandname(appliedFilter?.brandname?.length > 0 ? appliedFilter?.brandname : [])
     }
-  },[selectedCategory])
+  }, [selectedCategory])
 
   const renderContent = () => {
     const style = {
       color: '#64646D',
+      fontFamily:'Poppins-Medium'
     };
     switch (selectedCategory) {
       case 'price':
@@ -61,7 +62,7 @@ const FilterScreen = ({
                 onPress={() => setPrice(option?.price)}>
                 <Text
                   style={{
-                    fontWeight: price == option?.price ? '600' : '400',
+                    fontFamily: price == option?.price ? 'Poppins-SemiBold' : 'Poppins-Medium',
                     color: price == option?.price ? '#111111' : '#64646D',
                   }}>
                   {option?.label}
@@ -80,7 +81,7 @@ const FilterScreen = ({
                 onPress={() => setGender(option)}>
                 <Text
                   style={{
-                    fontWeight: gender == option ? '600' : '400',
+                    fontFamily: gender == option ? 'Poppins-SemiBold' : 'Poppins-Medium',
                     color: gender == option ? '#111111' : '#64646D',
                   }}>
                   {option}
@@ -100,8 +101,9 @@ const FilterScreen = ({
                 onPress={() => setdiscount_values(option?.discount_value)}>
                 <Text
                   style={{
-                    fontWeight:
-                      discount_value == option?.discount_value ? '600' : '400',
+                    // fontWeight:
+                    //   discount_value == option?.discount_value ? '600' : '400',
+                      fontFamily: discount_value == option?.discount_value ? 'Poppins-SemiBold' : 'Poppins-Medium',
                     color:
                       discount_value == option?.discount_value
                         ? '#111111'
@@ -135,19 +137,19 @@ const FilterScreen = ({
       case 'color':
         return (
           <ScrollView>
-            {[...screenData?.color].map(color => (
-              <View key={color?.name} style={styles.option}>
+            {[...screenData?.color].map(colors => (
+              <View key={colors?.name} style={styles.option}>
                 <Checkbox
-                  status={color.includes(color?.name) ? 'checked' : 'unchecked'}
+                  status={color.includes(colors?.name) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    let colorfilter = [...color]
-                    colorfilter.push(color?.name)
-                    setcolor(colorfilter);
+                    let colorsfilter = [...color]
+                    colorsfilter.push(colors?.name)
+                    setcolor(colorsfilter);
                   }}
                 />
-                <Text style={style}>
-                  <Text style={{backgroundColor:color.name,width:40,height:30}}></Text>
-                  {color?.name}</Text>
+                <Text style={[style,{justifyContent:'center'}]}>
+                  {/* <View style={{ backgroundColor: colors?.name.toLowerCase(), width: 30, height: 20,marginRight:10 }}></View> */}
+                  {colors?.name}</Text>
               </View>
             ))}
           </ScrollView>
@@ -222,83 +224,67 @@ const FilterScreen = ({
     setsubsubcat_id([])
     close({});
   };
-  
+
   return (
     <PaperProvider>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onOnlyClose}>
-              <Image
-                style={{ width: 32, height: 32, marginRight: 10 }}
-                source={require('../../assets/cross.png')}
-              />
-            </TouchableOpacity>
-            <Text style={styles.headerText}>{selectedCategory == 'sort' ? 'Sort':'Filter'}</Text>
-          </View>
-          <View style={styles.content}>
-            <ScrollView style={styles.leftPanel}>
-              {selectedCategory == 'sort' ?
-                <TouchableOpacity
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onOnlyClose}>
+            <Image
+              style={{ width: 32, height: 32, marginRight: 10 }}
+              source={require('../../assets/cross.png')}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>{selectedCategory == 'sort' ? 'Sort' : 'Filter'}</Text>
+        </View>
+        <View style={styles.content}>
+          <ScrollView style={styles.leftPanel}>
+            {Object.keys(screenData).map(category => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category && styles.selectedCategory,
+                ]}
+                onPress={() => setSelectedCategory(category)}>
+                <Text
                   style={[
-                    styles.categoryButton,
-                    styles.selectedCategory,
+                    styles.categoryText,
+                    selectedCategory === category
+                      ? styles.selectedText
+                      : styles.unselectedText,
                   ]}>
-                  <Text
-                    style={[
-                      styles.categoryText, styles.selectedText
-                    ]}>
-                    {'Sort'}
-                  </Text>
+                  {category}
+                </Text>
+                {selectedCategory === category && (
                   <View style={styles.indicator} />
-                </TouchableOpacity>
-                : <>
-                  {Object.keys(screenData).map(category => (
-                    <TouchableOpacity
-                      key={category}
-                      style={[
-                        styles.categoryButton,
-                        selectedCategory === category && styles.selectedCategory,
-                      ]}
-                      onPress={() => setSelectedCategory(category)}>
-                      <Text
-                        style={[
-                          styles.categoryText,
-                          selectedCategory === category
-                            ? styles.selectedText
-                            : styles.unselectedText,
-                        ]}>
-                        {category}
-                      </Text>
-                      {selectedCategory === category && (
-                        <View style={styles.indicator} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </>}
-            </ScrollView>
-            <View style={styles.rightPanel}>{renderContent()}</View>
-          </View>
-          <View style={styles.footer}>
-            <ButtonComp
-              onPress={onClearAll}
-              color="#FFFFFF"
-              bdrColor="#DEDEE0"
-              txtColor="#111111"
-              title="Clear All"
-              width="40%"
-              padding={1}
-            />
-            <ButtonComp
-              onPress={onComplete}
-              color="#21212F"
-              bdrColor="#21212F"
-              txtColor="#FFFFFF"
-              title="Apply"
-              width="40%"
-              padding={1}
-            />
-          </View>
-        </SafeAreaView>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.rightPanel}>{renderContent()}</View>
+        </View>
+        <View style={styles.footer}>
+          <ButtonComp
+            onPress={onClearAll}
+            color="#FFFFFF"
+            bdrColor="#DEDEE0"
+            txtColor="#111111"
+            title="Clear All"
+            width="40%"
+            padding={1}
+          />
+          <ButtonComp
+            onPress={onComplete}
+            color="#21212F"
+            bdrColor="#21212F"
+            txtColor="#FFFFFF"
+            title="Apply"
+            width="40%"
+            padding={1}
+          />
+        </View>
+      </SafeAreaView>
     </PaperProvider>
   );
 };
@@ -320,8 +306,8 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 16,
-    fontWeight: Platform.OS == 'android' ? '700' : '500',
-    // fontFamily: 'Poppins',
+    // fontWeight: Platform.OS == 'android' ? '700' : '500',
+    fontFamily: 'Poppins-SemiBold',
     color: '#000000',
   },
   content: {
@@ -357,21 +343,21 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 14,
-    fontWeight: Platform.OS == 'android' ? '700' : '500',
+    // fontWeight: Platform.OS == 'android' ? '700' : '500',
     textTransform: 'capitalize',
-    // fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
     color: '#64646D',
   },
   selectedText: {
     color: '#111111',
     fontSize: 14,
-    fontWeight: Platform.OS == 'android' ? '700' : '500',
-    // fontFamily: 'Poppins',
+    // fontWeight: Platform.OS == 'android' ? '700' : '500',
+    fontFamily: 'Poppins-SemiBold',
   },
   unselectedText: {
     color: '#64646D',
     fontSize: 14,
-    fontWeight: Platform.OS == 'android' ? '700' : '500',
+    // fontWeight: Platform.OS == 'android' ? '700' : '500',
     // fontFamily: 'Poppins',
   },
   option: {

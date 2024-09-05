@@ -121,6 +121,7 @@ const SelectLocation = ({navigation}) => {
             await AsyncStorage.setItem('@login', 'true');
             locationDetails.Latitude = latitude;
             locationDetails.Longitude = longitude;
+            locationDetails.zipcode = locationDetails.postalCode;
             locationDetails.sellerId = ids;
             global.sellerId = ids 
             await AsyncStorage.setItem(

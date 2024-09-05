@@ -30,56 +30,15 @@ import { BASE_URL } from '../../config';
 import locationArrow from '../../assets/location_icon.png';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 import { haversineDistance } from '../../helpers/phoneValidator';
-import { useQuery } from '@tanstack/react-query';
-import { getAddressList } from '../../hooks/hook';
 import { useSelector } from 'react-redux';
 import { AddressContainer } from '../../components/AddressContainer';
-
-const LocationModal = (props, ref) => {
-  const [show, setShow] = useState(false);
-
-  useImperativeHandle(ref, () => ({
-    setShow,
-  }));
-
-  return (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={show}
-      onRequestClose={() => {
-        setShow(false);
-      }}>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#00000070',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-        <ActivityIndicator size={'large'} color={'white'} />
-      </View>
-    </Modal>
-  );
-};
-
-const LocationModalRef = forwardRef(LocationModal);
 
 const SearchLocation = ({ navigation }) => {
   const currentLatLong = useRef({});
   const inputSearchRef = useRef(null)
-  const loadingRef = useRef({
-    setShow: () => { },
-  });
   const [suggestionLocation, setSuggestionLocation] = useState([]);
-  const [currentLocation, setCurrentLocation] = useState();
-  const [addListModal, setAddListModal] = useState(false);
-
-  const { data: addressDetail, isLoading: addressLoading } = useQuery({
-    queryKey: ['address'],
-    queryFn: getAddressList,
-  });
-
+  const [NoLocation, setNoLocation] = useState(false)
+  const [show, setShow] = useState(false)
   const { addressList } = useSelector(state => state.Cart);
 
   const handleInputChange = async text => {
@@ -161,10 +120,9 @@ const SearchLocation = ({ navigation }) => {
     const url = `https://maps.googleapis.com/maps/api/place/details/json?placeid=${place_id}&key=${Google_Api_Key}`;
     try {
       const response = await axios.get(url);
-      console.log(response.data.result?.geometry);
-
       if (response.data?.result) {
-        return response.data?.result?.geometry;
+        const postalCode = response.data?.result?.address_components.find(component => component?.types.includes("postal_code"))?.long_name;
+        return {...response.data?.result?.geometry, zipcode:postalCode || ''};
       } else {
         return false;
       }
@@ -176,12 +134,13 @@ const SearchLocation = ({ navigation }) => {
 
   const onSelectAddress = async address => {
     try {
-
+      // setShow(true)
       let fromScreen = await AsyncStorage.getItem('fromScreen')
       let latLong = await getLatLongByPlaceId(address.place_id)
       if (latLong) {
         const lati = latLong.location.lat
         const long = latLong.location.lng
+        const zipcode = latLong.zipcode
         const response = await axios.get(`${BASE_URL}/general-setting`);
         const sellerData = response?.data?.data?.supplier;
         const sellerDistance = response?.data?.data?.distance_km;
@@ -193,7 +152,7 @@ const SearchLocation = ({ navigation }) => {
         const stateName = address?.terms[2].value
         locationDetails.city = cityName;
         locationDetails.state = stateName;
-        locationDetails.postalCode = 'null';
+        locationDetails.zipcode = zipcode;
         locationDetails.longitude = long;
         locationDetails.latitude = lati;
         sellerData.map(item => {
@@ -213,14 +172,21 @@ const SearchLocation = ({ navigation }) => {
         } else {
           ids = sellerNearMe.join(',');
         }
+        if(ids == '' || ids == undefined){
+          setShow(false)
+          setNoLocation(true)
+          return;
+        }
         global.sellerId = ids;
         getLocationDetails(lati, long).then(async locationDetails => {
           if (locationDetails) {
             await AsyncStorage.setItem('@login', 'true');
             locationDetails.Latitude = lati;
             locationDetails.Longitude = long;
+            locationDetails.zipcode = locationDetails.postalCode;
             locationDetails.sellerId = ids;
             global.sellerId = ids
+            setShow(false)
             await AsyncStorage.setItem(
               'userCurrentLocation',
               JSON.stringify(locationDetails),
@@ -267,6 +233,7 @@ const SearchLocation = ({ navigation }) => {
   };
 
   const getLocation = async () => {
+    setShow(true)
     const response = await axios.get(`${BASE_URL}/general-setting`);
     const sellerData = response?.data?.data?.supplier;
     const sellerDistance = response?.data?.data?.distance_km;
@@ -295,14 +262,24 @@ const SearchLocation = ({ navigation }) => {
         } else {
           ids = sellerNearMe.join(',');
         }
+
+        if(ids == '' || ids == undefined){
+          setShow(false)
+          setNoLocation(true)
+          return;
+        }
+
+
         let fromScreen = await AsyncStorage.getItem('fromScreen')
         getLocationDetails(latitude, longitude).then(async locationDetails => {
           if (locationDetails) {
             await AsyncStorage.setItem('@login', 'true');
             locationDetails.Latitude = latitude;
             locationDetails.Longitude = longitude;
+            locationDetails.zipcode = locationDetails.postalCode;
             locationDetails.sellerId = ids;
             global.sellerId = ids
+            setShow(false)
             await AsyncStorage.setItem(
               'userCurrentLocation',
               JSON.stringify(locationDetails),
@@ -338,22 +315,23 @@ const SearchLocation = ({ navigation }) => {
   const renderAddresses = ({ item }) => (
     <AddressContainer
       onPress={async () => {
+        setShow(true)
         let fromScreen = await AsyncStorage.getItem('fromScreen')
         const lati = item.Latitude
         const long = item.Longitude
         const response = await axios.get(`${BASE_URL}/general-setting`);
         const sellerData = response?.data?.data?.supplier;
         const sellerDistance = response?.data?.data?.distance_km;
-
         let sellerID = [];
         let sellerNearMe = [];
         let locationDetails = {};
         locationDetails.city = item.city;
         locationDetails.address = item.address;
         locationDetails.state = item.state;
-        locationDetails.postalCode = item.zipcode;
-        locationDetails.longitude = long;
-        locationDetails.latitude = lati;
+        locationDetails.zipcode = item.zipcode;
+        locationDetails.Longitude = long;
+        locationDetails.Latitude = lati;
+        locationDetails.add_type = item.add_type
         sellerData.map(item => {
           const distance = haversineDistance(
             lati,
@@ -371,7 +349,15 @@ const SearchLocation = ({ navigation }) => {
         } else {
           ids = sellerNearMe.join(',');
         }
+
+        if(ids == '' || ids == undefined){
+          setShow(false)
+          setNoLocation(true)
+          return;
+        }
+        locationDetails.sellerId = ids;
         global.sellerId = ids;
+        setShow(false)
         await AsyncStorage.setItem(
           'userCurrentLocation',
           JSON.stringify(locationDetails),
@@ -430,7 +416,6 @@ const SearchLocation = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LocationModalRef ref={loadingRef} />
       <CustomHeader title={'Search location to add address'} back />
       <View style={styles.txtIpBox}>
         <Image
@@ -444,7 +429,6 @@ const SearchLocation = ({ navigation }) => {
           style={styles.txtIp}
         />
       </View>
-
       <TouchableOpacity
         onPress={() =>
           Platform.OS == 'ios' ? getLocation() : requestLocationPermission()
@@ -477,7 +461,43 @@ const SearchLocation = ({ navigation }) => {
           marginTop: 5,
         }}
       />
-
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={show}
+        onRequestClose={() => {
+          setShow(false);
+        }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#00000070',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <ActivityIndicator size={'large'} color={'white'} />
+        </View>
+      </Modal>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={NoLocation}
+        onRequestClose={() => {
+          setNoLocation(false);
+        }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#00000070',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <View style={{backgroundColor:'#fff',width:'90%',padding:30,borderRadius:4,alignItems:'center'}}>
+            <Text style={{fontSize:16,color:'#333',fontFamily:'Poppins'}}>No Style found on selected Location</Text>
+            <TouchableOpacity onPress={()=>setNoLocation(false)} style={{backgroundColor:'#000',width:'50%',borderRadius:30,padding:15,marginTop:30,alignItems:'center'}}><Text style={{fontSize:16,color:'#fff',fontFamily:'Poppins'}}>Change Location</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

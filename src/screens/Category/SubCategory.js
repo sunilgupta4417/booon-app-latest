@@ -272,7 +272,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
             )}
             ListFooterComponent={
               isLoading && (
-                <ActivityIndicator size="large" color="#0000ff" />
+                <ActivityIndicator size="small" color="#000" />
               )
             }
           />

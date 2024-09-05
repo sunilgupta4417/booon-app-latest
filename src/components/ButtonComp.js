@@ -59,10 +59,10 @@ const styles = StyleSheet.create({
   },
   BtnTxt: {
     fontSize: 14,
-    fontWeight: Platform.OS == 'android' ? '700' : '500',
+    // fontWeight: Platform.OS == 'android' ? '700' : '500',
     margin: 2,
     marginVertical: 8,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
     lineHeight: 21,
   },
 });

@@ -29,7 +29,6 @@ export default function OrderSuccess({navigation, route}) {
         Authorization: `Bearer ${savedToken}`,
       };
 
-      // console.log(routeData.orderResponse.order_ids[0],'routeDatarouteDatarouteDatarouteData=======>')
       const response = await axios.get(
         `${BASE_URL}/cancel-order/${routeData.orderResponse.order_ids[0]}`,
         {headers},
@@ -62,9 +61,6 @@ export default function OrderSuccess({navigation, route}) {
   };
   const CountDown = () => {
     const [timeLeft, setTimeLeft] = useState(120);
-
-    // const [time, setTime] = useState(2);
-
     useEffect(() => {
       if (timeLeft > 0) {
         const timerId = setInterval(() => {
@@ -72,25 +68,10 @@ export default function OrderSuccess({navigation, route}) {
         }, 1000);
 
         return () => clearInterval(timerId); // Cleanup the interval on component unmount
+      }else{
+        navigation.navigate('Account')
       }
     }, [timeLeft]);
-
-    // useEffect(() => {
-    //   const interval = setInterval(() => {
-    //     setTime(prevTime => {
-    //       if (prevTime > 0) {
-    //         return prevTime - 1;
-    //       } else {
-    //         clearInterval(interval);
-    //         return 0;
-    //       }
-    //     });
-    //   }, 60000);
-
-    //   return () => clearInterval(interval);
-    // }, []);
-
-    // console.log(routeData.orderResponse.config.data,'routeData===========>')
 
     const formatTime = (seconds) => {
       const minutes = Math.floor(seconds / 60);
@@ -262,7 +243,7 @@ export default function OrderSuccess({navigation, route}) {
             fontSize: 15,
             color: 'rgba(100, 100, 109, 1)',
           }}>
-          You will recieve your styles by 11.50am
+          You will recieve your styles by {routeData.DeleiveryTime}
         </Text>
         <View
           style={{

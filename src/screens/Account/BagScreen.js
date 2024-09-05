@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getAddressList } from '../../hooks/hook';
 import { AddressContainer } from '../../components/AddressContainer';
 import { useSelector } from 'react-redux';
+import { haversineDistance } from '../../helpers/phoneValidator';
 
 const BagScreen = ({ navigation }) => {
   const [cartData, setCartData] = useState([]);
@@ -34,7 +35,7 @@ const BagScreen = ({ navigation }) => {
   const [modalData, setModalData] = useState();
   const [totalSP, setTotalSP] = useState();
   const [currentLocation, setCurrentLocation] = useState();
-  const [selected, setSelected] = useState(true);
+  const [selected, setSelected] = useState(0);
   const [sizeModal, setSizeModal] = useState(false);
   const [qtyModal, setQtyModal] = useState(false);
   const [selectedSizes, setSelectedSizes] = useState({});
@@ -43,6 +44,7 @@ const BagScreen = ({ navigation }) => {
   const [txtCoupon, setCouponValue] = useState('');
   const [isProceed, setisProceed] = useState(false)
   const [isAddressGet, setisAddressGet] = useState(false)
+  const [NoLocation, setNoLocation] = useState(false)
   const [discountValue, setDiscountValue] = useState(0);
   const [shippingCharges, setShippingCharges] = useState(0);
   const [chargesList, setChargesList] = useState([]);
@@ -54,6 +56,7 @@ const BagScreen = ({ navigation }) => {
   const [addListModal, setAddListModal] = useState(false);
   const grandTotal = totalSP - discountValue + shippingCharges;
   const { addressList } = useSelector(state => state.Cart);
+  const [DeleiveryTime,setDeleiveryTime] = useState('')
   const [AddressLists, setAddressLists] = useState(addressList)
 
   useEffect(() => {
@@ -61,22 +64,19 @@ const BagScreen = ({ navigation }) => {
     getUserAddress();
     getCouponCodeList();
     getShippingCharges()
-    _getUserCurrentLocation()
+    // _getUserCurrentLocation()
   }, []);
-
-  // useEffect(() => {
-  //   if (isAddressGet) {
-  //     const { addressList } = useSelector(state => state.Cart);
-  //     setAddressLists(addressList)
-  //   }
-  // }, [isAddressGet])
 
   const getUserAddress = async () => {
     const userLocation = JSON.parse(
       await AsyncStorage.getItem('userCurrentLocation'),
     );
+    const addressChanged = await AsyncStorage.getItem('addressChange');
+    console.log('-=-=addressChanged-=-=', userLocation);
+
+    setaddressChange(addressChanged)
     setCurrentLocation(userLocation);
-    // console.log(userLocation, 'userLocation');
+    setUserCurrentAddress(userLocation);
   };
 
   const removeProduct = async () => {
@@ -234,113 +234,126 @@ const BagScreen = ({ navigation }) => {
     setModalData(item);
   };
 
-  const renderLiveOrderItem = ({ item }) => (
-    <View style={[styles.profileView, styles.row]}>
-      <Image
-        style={{ width: responsiveWidth(89), height: responsiveWidth(118) }}
-        source={{ uri: item.product_image }}
-      />
-      <View style={{ padding: 10, borderWidth: 0, width: '70%' }}>
-        <Text style={styles.nameTxt}>{item.brandname}</Text>
-        <Text style={[styles.mobileTxt, { fontWeight: '400' }]}>
-          {item.shortdescription}
-        </Text>
-        <View
-          style={[
-            styles.row,
-            { marginVertical: 8, justifyContent: 'space-between', width: '60%' },
-          ]}>
-          <TouchableOpacity
-            style={[
-              styles.row,
-              {
-                borderWidth: 1,
-                borderColor: '#DEDEE0',
-                borderRadius: 20,
-                padding: 6,
-                marginRight: 5,
-              },
-            ]}
-            onPress={() => {
-              setSizeModal(true);
-              setSizesList(item?.product_size);
-              setModalData(item);
-            }}>
-            <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
-              Size :{' '}
-              <Text style={{ fontWeight: '500' }}>
-                {JSON.parse(item.options)?.Size}
-              </Text>
-            </Text>
-            <Image
-              style={{ height: 6, width: 10, margin: 4 }}
-              source={require('../../assets/Home/down.png')}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setModalData(item);
-              setQtyModal(true);
-              setSelectedQty([item?.quantity]);
-            }}
-            style={[
-              styles.row,
-              {
-                borderWidth: 1,
-                borderColor: '#DEDEE0',
-                borderRadius: 20,
-                padding: 6,
-              },
-            ]}>
-            <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
-              Qty : <Text style={{ fontWeight: '500' }}>{item?.quantity}</Text>
-            </Text>
-            <Image
-              style={{ height: 6, width: 10, margin: 4 }}
-              source={require('../../assets/Home/down.png')}
-            />
-          </TouchableOpacity>
-        </View>
-        <Text style={[styles.nameTxt, { marginTop: 0 }]}>
-          ₹{item.sellprice}
-          <Text
-            style={{
-              fontWeight: '400',
-              color: '#64646D99',
-              textDecorationLine: 'line-through',
-            }}>
-            {' '}
-            ₹{parseInt(item.costprice)}{' '}
-          </Text>{' '}
-          <Text style={{ color: '#5EB160' }}>
-            {' '}
-            {((item.sellprice / item.costprice) * 100).toFixed()}% OFF
-          </Text>
-        </Text>
-        <Text style={{ fontWeight: '400', color: '#64646D99' }}>
-          {getDistanceFromLatLonInKm(
-            {
-              latitude: currentLocation?.Latitude,
-              longitude: currentLocation?.Longitude,
-            },
-            { latitude: item?.Latitude, longitude: item?.Longitude },
-            {
-              startTime: item?.workinng_start_time,
-              endTime: item?.workinng_end_time,
-            },
-          )}
-        </Text>
-      </View>
-      <TouchableOpacity
-        onPress={() => openRemoveModal(item)}
-        style={{ alignSelf: 'flex-start', marginTop: 10 }}>
+  const renderLiveOrderItem = ({ item }) => {
+    setDeleiveryTime(getDistanceFromLatLonInKm(
+      {
+        latitude: currentLocation?.Latitude,
+        longitude: currentLocation?.Longitude,
+      },
+      { latitude: item?.Latitude, longitude: item?.Longitude },
+      {
+        startTime: item?.workinng_start_time,
+        endTime: item?.workinng_end_time,
+      },
+    ))
+    return (
+      <View style={[styles.profileView, styles.row]}>
         <Image
-          style={{ height: 20, width: 20 }}
-          source={require('../../assets/remove.png')}
+          style={{ width: responsiveWidth(89), height: responsiveWidth(118) }}
+          source={{ uri: item.product_image }}
         />
-      </TouchableOpacity>
-    </View>
-  );
+        <View style={{ padding: 10, borderWidth: 0, width: '70%' }}>
+          <Text style={styles.nameTxt}>{item.brandname}</Text>
+          <Text style={[styles.mobileTxt, { fontWeight: '400' }]}>
+            {item.shortdescription}
+          </Text>
+          <View
+            style={[
+              styles.row,
+              { marginVertical: 8, justifyContent: 'space-between', width: '60%' },
+            ]}>
+            <TouchableOpacity
+              style={[
+                styles.row,
+                {
+                  borderWidth: 1,
+                  borderColor: '#DEDEE0',
+                  borderRadius: 20,
+                  padding: 6,
+                  marginRight: 5,
+                },
+              ]}
+              onPress={() => {
+                setSizeModal(true);
+                setSizesList(item?.product_size);
+                setModalData(item);
+              }}>
+              <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
+                Size :{' '}
+                <Text style={{ fontWeight: '500' }}>
+                  {JSON.parse(item.options)?.Size}
+                </Text>
+              </Text>
+              <Image
+                style={{ height: 6, width: 10, margin: 4 }}
+                source={require('../../assets/Home/down.png')}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setModalData(item);
+                setQtyModal(true);
+                setSelectedQty([item?.quantity]);
+              }}
+              style={[
+                styles.row,
+                {
+                  borderWidth: 1,
+                  borderColor: '#DEDEE0',
+                  borderRadius: 20,
+                  padding: 6,
+                },
+              ]}>
+              <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
+                Qty : <Text style={{ fontWeight: '500' }}>{item?.quantity}</Text>
+              </Text>
+              <Image
+                style={{ height: 6, width: 10, margin: 4 }}
+                source={require('../../assets/Home/down.png')}
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.nameTxt, { marginTop: 0 }]}>
+            ₹{item.sellprice}
+            <Text
+              style={{
+                fontWeight: '400',
+                color: '#64646D99',
+                textDecorationLine: 'line-through',
+              }}>
+              {' '}
+              ₹{parseInt(item.costprice)}{' '}
+            </Text>{' '}
+            <Text style={{ color: '#5EB160' }}>
+              {' '}
+              {((item.sellprice / item.costprice) * 100).toFixed()}% OFF
+            </Text>
+          </Text>
+          <Text style={{ fontWeight: '400', color: '#64646D99' }}>
+            {getDistanceFromLatLonInKm(
+              {
+                latitude: currentLocation?.Latitude,
+                longitude: currentLocation?.Longitude,
+              },
+              { latitude: item?.Latitude, longitude: item?.Longitude },
+              {
+                startTime: item?.workinng_start_time,
+                endTime: item?.workinng_end_time,
+              },
+            )}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => openRemoveModal(item)}
+          style={{ alignSelf: 'flex-start', marginTop: 10 }}>
+          <Image
+            style={{ height: 20, width: 20 }}
+            source={require('../../assets/remove.png')}
+          />
+        </TouchableOpacity>
+      </View>
+    )
+  }
 
   const ServiceComp = ({ uri, txt }) => (
     <View
@@ -431,7 +444,7 @@ const BagScreen = ({ navigation }) => {
           orderTotal + item?.sellprice * item?.quantity + item?.ShippingCharge;
       });
 
-      const typePayment = selected ? '2' : '1';
+      const typePayment = selected == 0 ? '2' : '1';
 
       const myHeaders = new Headers();
       // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
@@ -444,25 +457,25 @@ const BagScreen = ({ navigation }) => {
       urlencoded.append('first_name', fname);
       urlencoded.append('last_name', lname);
       urlencoded.append('address', userLocation.address);
-      urlencoded.append('landmark', userLocation.postalCode);
+      urlencoded.append('landmark', userLocation.landmark || '');
       urlencoded.append('city', userLocation.city);
       urlencoded.append('state', userLocation.state);
-      urlencoded.append('zipcode', userLocation.postalCode);
+      urlencoded.append('zipcode', userLocation.zipcode);
       urlencoded.append('country', userLocation.city);
       urlencoded.append('shipping_charge', shippingCharges);
       urlencoded.append('order_subtotal', subtotal);
       urlencoded.append('order_totals', orderTotal);
       urlencoded.append('order_status', typePayment);
       // order_status
-      urlencoded.append('payment_mode', '0');
+      urlencoded.append('payment_mode', selected);
       urlencoded.append('txt_status', '');
       urlencoded.append('cs_latitude', userLocation.Latitude);
-      urlencoded.append('cs_longitude', userLocation.Latitude);
+      urlencoded.append('cs_longitude', userLocation.Longitude);
       urlencoded.append('shipping_buil_flat_no', userLocation.address);
       urlencoded.append('shipping_street_add', userLocation.address);
       urlencoded.append('mobile', mobile);
-      urlencoded.append('user_id', '178');
-      urlencoded.append('device_id', global.deviceId);
+      // urlencoded.append('user_id', '178');
+      // urlencoded.append('device_id', global.deviceId);
 
       const requestOptions = {
         method: 'POST',
@@ -474,33 +487,10 @@ const BagScreen = ({ navigation }) => {
       fetch(BASE_URL + '/create-order', requestOptions)
         .then(response => response.json())
         .then(result => {
-          console.log(
-            JSON.stringify(result),
-            '0000000034953400+++++++++++++===========>',
-          );
-          // navigation.replace('OrderSuccess', {
-          //   orderResponse:result,
-          // });
-          if (selected === false) {
-            // navigation.navigate('WebViewPage', {response: {}});
+          if (selected === 1) {
             let urlencoded = new FormData();
             urlencoded.append('order_id', result?.order_ids[0]);
             urlencoded.append('amount', orderTotal);
-
-            console.log(
-              {
-                order_ids: result?.order_ids[0],
-                orderTotal,
-              },
-              '34987543958739458',
-            );
-            console.log(
-              {
-                orderId: result?.order_ids[0],
-                amount: orderTotal,
-              },
-              '99999999999999999345345345',
-            );
             const requestOptions = {
               method: 'POST',
               headers: myHeaders,
@@ -512,8 +502,6 @@ const BagScreen = ({ navigation }) => {
               .then(response => response.json())
               .then(result => {
                 navigation.navigate('WebViewPage', { response: result });
-                // WebViewPage
-                // console.log(result, '000000000000000000000000+++><----->'),
               })
               .catch(error => console.error(error));
             setLoading(false);
@@ -522,9 +510,10 @@ const BagScreen = ({ navigation }) => {
               navigation.replace('OrderSuccess', {
                 payload: urlencoded,
                 orderResponse: result,
+                DeleiveryTime:DeleiveryTime
               });
             } else {
-              alert('Something went wrong');
+              Alert.alert('Something went wrong');
             }
             setLoading(false);
           }
@@ -549,13 +538,6 @@ const BagScreen = ({ navigation }) => {
     );
   };
 
-  const _getUserCurrentLocation = async () => {
-    const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
-    const addressChanged = await AsyncStorage.getItem('addressChange');
-    setaddressChange(addressChanged)
-    setUserCurrentAddress(JSON.parse(userCurrentLocation))
-  }
-
   const AddressDelivery = () => {
     const { data: addressData, isLoading } = useQuery({
       queryKey: ['address'],
@@ -565,10 +547,9 @@ const BagScreen = ({ navigation }) => {
     let buttonLabel = ``;
 
     if (addressData?.data?.length == 0 || addressData?.data == null) {
-      buttonLabel = 'Add address';
-      return;
+      buttonLabel = UserCurrentAddress.address;
     } else {
-      buttonLabel = `Deliver to : ${addressChange == 'false' ? addressData?.data[0]?.add_type+', '+addressData?.data[0]?.address : UserCurrentAddress?.add_type+', '+UserCurrentAddress.address}`;
+      buttonLabel = `${addressChange == 'false' ? addressData?.data[0]?.add_type + ', ' + addressData?.data[0]?.address : UserCurrentAddress.address}`;
     }
 
     return (
@@ -579,10 +560,16 @@ const BagScreen = ({ navigation }) => {
         <Text
           style={{
             fontSize: 12,
-            fontWeight: '400',
-            fontFamily: 'Poppins',
+            // fontWeight: '400',
+            fontFamily: 'Poppins-Medium',
             color: '#000000',
           }}>
+          <Text style={{
+            fontSize: 12,
+            // fontWeight: '400',
+            fontFamily: 'Poppins-SemiBold',
+            color: '#000000',
+          }}>Deliver to : </Text>
           {buttonLabel}
         </Text>
       </TouchableOpacity>
@@ -601,7 +588,6 @@ const BagScreen = ({ navigation }) => {
     } else {
       buttonLabel = 'Select Address';
     }
-
     const onPlaceOrder = async () => {
       if (addressData?.data?.length == 0 || addressData?.data == null) {
         let detail = await AsyncStorage.getItem('userCurrentLocation');
@@ -610,6 +596,7 @@ const BagScreen = ({ navigation }) => {
           Authorization: `Bearer ${savedToken}`,
         };
         const response = await axios.get(`${BASE_URL}/profile`, { headers });
+
         if (detail == null) {
           detail = {};
         } else {
@@ -641,7 +628,7 @@ const BagScreen = ({ navigation }) => {
 
         payload.city = detail?.city;
         payload.state = detail?.state;
-        payload.zipcode = detail?.postalCode;
+        payload.zipcode = detail?.zipcode;
         payload.Latitude = detail?.Latitude;
         payload.Longitude = detail?.Longitude;
         payload.address = detail?.address;
@@ -653,7 +640,7 @@ const BagScreen = ({ navigation }) => {
             await AsyncStorage.setItem('userCurrentLocation', JSON.stringify(val));
             setAddressLists(prevData => [
               ...prevData,
-              ...val,
+              val,
             ])
             setisAddressGet(true)
           },
@@ -662,7 +649,6 @@ const BagScreen = ({ navigation }) => {
         setAddListModal(true)
       }
     };
-
     return (
       <ButtonComp
         onPress={onPlaceOrder}
@@ -675,11 +661,101 @@ const BagScreen = ({ navigation }) => {
     );
   };
 
+  const addAddressModal = async () => {
+    setAddListModal(false)
+    let detail = await AsyncStorage.getItem('userCurrentLocation');
+    if (detail == null) {
+      detail = {};
+    } else {
+      detail = JSON.parse(detail);
+    }
+
+    let payload = {
+      address: '',
+      mobile: '',
+      firstname: '',
+      lastname: '',
+      city: '',
+      state: '',
+      zipcode: '',
+      add_type: '',
+      landmark: '',
+      buil_flat_no: '',
+      Latitude: '',
+      Longitude: '',
+    };
+    payload.city = detail?.city;
+    payload.state = detail?.state;
+    payload.zipcode = detail?.zipcode;
+    payload.Latitude = detail?.Latitude;
+    payload.Longitude = detail?.Longitude;
+    payload.address = detail?.address;
+    navigation.navigate('AddAddress', {
+      from: 'cart',
+      addressDetails: payload,
+      onAddAddress: async (val) => {
+        await AsyncStorage.setItem('userCurrentLocation', JSON.stringify(val));
+        setAddressLists(prevData => [
+          ...prevData,
+          val,
+        ])
+        setisAddressGet(true)
+      },
+    });
+  }
+
   const renderAddresses = ({ item }) => (
     <AddressContainer
       onPress={async () => {
-        await AsyncStorage.setItem('userCurrentLocation', JSON.stringify(item));
-        setCurrentLocation(item);
+        setNoLocation(false)
+        const lati = item.Latitude
+        const long = item.Longitude
+        const response = await axios.get(`${BASE_URL}/general-setting`);
+        const sellerData = response?.data?.data?.supplier;
+        const sellerDistance = response?.data?.data?.distance_km;
+        let sellerID = [];
+        let sellerNearMe = [];
+        let locationDetails = {};
+        locationDetails.city = item.city;
+        locationDetails.address = item.address;
+        locationDetails.state = item.state;
+        locationDetails.zipcode = item.zipcode;
+        locationDetails.add_type = item.add_type
+        locationDetails.Longitude = long;
+        locationDetails.Latitude = lati;
+        sellerData.map(item => {
+          const distance = haversineDistance(
+            lati,
+            long,
+            item?.Latitude,
+            item?.Longitude,
+          );
+          if (distance <= sellerDistance) {
+            sellerNearMe.push(item?.id);
+          }
+        });
+        let ids = '';
+        if (sellerNearMe.length == 0) {
+          ids = sellerID.join(',');
+        } else {
+          ids = sellerNearMe.join(',');
+        }
+        if (ids == '' || ids == undefined) {
+          setNoLocation(true)
+          setAddListModal(false)
+          return;
+        }
+
+        global.sellerId = ids;
+        await AsyncStorage.setItem(
+          'userCurrentLocation',
+          JSON.stringify(locationDetails),
+        );
+        await AsyncStorage.setItem(
+          'addressChange',
+          'true',
+        );
+        await getUserAddress()
         setAddListModal(false);
         setisProceed(true)
       }}
@@ -687,8 +763,8 @@ const BagScreen = ({ navigation }) => {
     />
   );
 
-  useEffect(()=>{
-    const setCuuL = async() => {
+  useEffect(() => {
+    const setCuuL = async () => {
       const userLocation = JSON.parse(
         await AsyncStorage.getItem('userCurrentLocation'),
       );
@@ -696,7 +772,7 @@ const BagScreen = ({ navigation }) => {
       setUserCurrentAddress(userLocation)
     }
     setCuuL()
-  },[isProceed])
+  }, [isProceed])
 
   const OrderProceedBtn = () => {
     return (
@@ -848,7 +924,7 @@ const BagScreen = ({ navigation }) => {
               borderColor: '#DEDEE0',
               backgroundColor: '#FFFFFF',
             }}>
-            <AddressDelivery />
+            {NoLocation ? <View><Text style={{ color: '#333', fontFamily: 'Poppins-Medium' }}>No Delivery at your Location</Text></View> : <AddressDelivery />}
 
             {isProceed ? <OrderProceedBtn /> : <OrderPlacePopup />}
           </View>
@@ -953,19 +1029,19 @@ const BagScreen = ({ navigation }) => {
                   <Text
                     style={{
                       fontSize: 14,
-                      fontWeight: '500',
-                      fontFamily: 'Poppins',
+                      color: '#333',
+                      fontFamily: 'Poppins-SemiBold',
                     }}>
                     Choose your payment mode
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setSelected(!selected)}
+                  onPress={() => setSelected(0)}
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-evenly',
                     width: '90%',
-                    borderColor: selected ? '#000000' : '#00000033',
+                    borderColor: selected == 0 ? '#000000' : '#00000033',
                     borderWidth: 1,
                     padding: 10,
                     alignSelf: 'center',
@@ -977,21 +1053,21 @@ const BagScreen = ({ navigation }) => {
                       width: 30,
                       borderRadius: 15,
                       borderWidth: 1,
-                      borderColor: selected ? '#000000' : '#00000033',
-                      backgroundColor: selected ? '#000000' : '#FFFFFF',
+                      borderColor: selected == 0 ? '#000000' : '#00000033',
+                      backgroundColor: selected == 0 ? '#000000' : '#FFFFFF',
                     }}></View>
                   <View>
-                    <Text>Pay on delivery</Text>
-                    <Text>Cash or UPI to the delivery partner</Text>
+                    <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay on delivery</Text>
+                    <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Cash or UPI to the delivery partner</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setSelected(!selected)}
+                  onPress={() => setSelected(1)}
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-evenly',
                     width: '90%',
-                    borderColor: !selected ? '#000000' : '#00000033',
+                    borderColor: selected == 1 ? '#000000' : '#00000033',
                     borderWidth: 1,
                     padding: 10,
                     alignSelf: 'center',
@@ -1003,12 +1079,12 @@ const BagScreen = ({ navigation }) => {
                       width: 30,
                       borderRadius: 15,
                       borderWidth: 1,
-                      borderColor: !selected ? '#000000' : '#00000033',
-                      backgroundColor: !selected ? '#000000' : '#FFFFFF',
+                      borderColor: selected == 1 ? '#000000' : '#00000033',
+                      backgroundColor: selected == 1 ? '#000000' : '#FFFFFF',
                     }}></View>
                   <View>
-                    <Text>Pay now online</Text>
-                    <Text>Credit/Debit Card, Netbanking, UPI</Text>
+                    <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay now online</Text>
+                    <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Credit/Debit Card, Netbanking, UPI</Text>
                   </View>
                 </TouchableOpacity>
                 <CreateOrderButton />
@@ -1163,35 +1239,23 @@ const BagScreen = ({ navigation }) => {
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
-                    margin: 5,
+                    // margin: 5,
+                    marginBottom: 10
                   }}>
-                  <Text style={[styles.headerTitle, { fontSize: 16 }]}>
+                  <Text style={{ fontSize: 18, fontFamily: 'Poppins-SemiBold', color: '#000' }}>
                     Select Address
                   </Text>
                   <TouchableOpacity
-                    onPress={() => setAddListModal(false)}
-                    style={{ padding: 6 }}>
-                    <Text style={{ alignSelf: 'flex-end' }}>
-                      x
-                    </Text>
+                    onPress={() => setAddListModal(false)}>
+                    <Image
+                      style={styles.modalClose}
+                      source={require('../../assets/cross.png')}
+                    />
                   </TouchableOpacity>
                 </View>
                 <FlatList data={AddressLists} renderItem={renderAddresses} />
                 <ButtonComp
-                  onPress={() => {
-                    navigation.navigate('AddAddress', {
-                      from: 'cart',
-                      onAddAddress: async (val) => {
-                        await AsyncStorage.setItem('userCurrentLocation', JSON.stringify(val));
-                        setAddressLists(prevData => [
-                          ...prevData,
-                          ...val,
-                        ])
-                        setisAddressGet(true)
-                        setisProceed(true)
-                      },
-                    });
-                  }}
+                  onPress={addAddressModal}
                   title={'Add Address'}
                   imgStyle={{ width: 14, height: 14, marginRight: 5 }}
                   width={'40%'}
@@ -1215,7 +1279,7 @@ const BagScreen = ({ navigation }) => {
           <View
             style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             {loading ? (
-              <ActivityIndicator size={'large'} color={'#16A34A'} />
+              <ActivityIndicator size={'small'} color={'#333'} />
             ) : (
               <Text>No Data</Text>
             )}

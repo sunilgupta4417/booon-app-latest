@@ -10,7 +10,7 @@ import {
 import React, { useCallback, useEffect, useState } from 'react';
 import ButtonComp from '../../components/ButtonComp';
 import CustomHeader from '../../components/CustomHeader';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +21,8 @@ const Address = ({ navigation }) => {
   const [addressData, setAddressData] = useState([]);
   const [primaryAddress, setPrimaryAddress] = useState(false);
   const [token, setToken] = useState(null);
+  const dispatch = useDispatch();
+
   // const { data } = useSelector((state) => ({
   //   data: state.Login.data.data
   // }))
@@ -48,6 +50,7 @@ const Address = ({ navigation }) => {
         }else{
           await AsyncStorage.setItem('addressData','false');
         }
+        dispatch({ type: 'SET_ADDRESS_LIST', payload: response.data.data });
         setAddressData(response.data.data);
 
       }

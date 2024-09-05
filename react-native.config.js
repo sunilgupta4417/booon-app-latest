@@ -7,11 +7,10 @@ module.exports = {
       },
     },
   },
-    project: {
-      ios: {
-        sourceDir: './ios',
-      },
+  project: {
+    ios: {
+      sourceDir: './ios',
     },
-    assets: ['./assets/fonts'],
-  };
-  
+  },
+  assets: ['./assets/fonts'],
+};

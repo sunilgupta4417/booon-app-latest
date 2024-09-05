@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -8,12 +8,8 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Modal,
-  ScrollView,
-  Pressable,
   ActivityIndicator,
   Dimensions,
-  Alert,
 } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import CustomHeader from '../../components/CustomHeader';
@@ -23,13 +19,13 @@ import FilterModal from 'react-native-modal'
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAddressList } from '../../hooks/hook';
-import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
 const width = Dimensions.get('window').width;
 
 
 const SubCategory2 = ({ navigation, route: { params } }) => {
-
+  const dispatch = useDispatch();
   const filterSort = useRef({});
   const [filterTypeRef, setfilterTypeRef] = useState('discount');
   const [sizeModal, setSizeModal] = useState(false);
@@ -57,17 +53,31 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     { lable: 'Price - Low to High', value: 'low_to_high' }
   ]
 
+  useFocusEffect(
+    useCallback(() => {
+      getCount()
+    }, []),
+  );
+
   useEffect(() => {
     const getAllLists = async () => {
-      setIsLoading(true)
+      getCount()
       await getSubCategory();
       await getProductList(1);
       await getFilter();
-      setIsLoading(false)
-      // resetAndFetchProducts();
     }
     getAllLists();
   }, []);
+
+  const getCount = async () => {
+    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const body = {
+      user_id: id,
+      device_id: global.deviceId,
+    };
+    const response = await axios.post(`${BASE_URL}/counting`, body);
+    dispatch({type: 'BAG_COUNT', payload: response.data});
+  };
 
   const getFilter = async () => {
     let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
@@ -82,6 +92,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     if (subCategoryId.current) {
       url = url + `&subsubcat_id=${subCategoryId.current}`;
     }
+    console.log('-=-=-url-=-=url-=-=-', url);
+    
     const res = await axios.get(url);
     if (res?.data) {
       setFilterData(res?.data);
@@ -101,7 +113,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       ...(params.subcat_id && { subcat_id: params.subcat_id }),
       ...(params.subsubcat_id && { subsubcat_id: params.subsubcat_id }),
     };
-
+    console.log('-=-=-paramsData-=-=-paramsData-=-=', paramsData);
+    
     const response = await axios.post(
       `${BASE_URL}/sub-sub-category`,
       paramsData,
@@ -172,10 +185,9 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       body.no_of_item = no_of_item;
     }
 
-    if (body.discount_value) {
+    if (body.discount_value && body.discount_value !== '0') {
       body.type = 'discount'
     }
-    console.log('-=-=-=-filter body-=-=-=', body);
 
     const response = await axios.post(`${BASE_URL}/product-list`, body);
     if (response.status === 200) {
@@ -203,13 +215,6 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       setIsLoading(false)
     }
   };
-
-  // const resetAndFetchProducts = () => {
-  //   // setPage(1);
-  //   // setSubCategoryData([]);
-  //   // setHasMoreData(true);
-  //   // getProductList(1);
-  // };
 
   const FilterComp = ({ name, onPress }) => (
     <TouchableOpacity
@@ -246,11 +251,11 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     <TouchableOpacity
       onPress={() => {
         subCategoryId.current = item?.cat_id;
-        getProductList(1, 10);
+        let category = {subsubcat_id:[item?.cat_id]}
+        closeFilterApply({...AppliedFilter, ...category})
       }}
       style={{
         alignItems: 'center',
-        // justifyContent: "center", // Center items vertically
         width: 80,
         borderWidth: 0,
         paddingBottom: 10,
@@ -265,6 +270,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         source={{ uri: item.image }}
       />
       <Text
+      numberOfLines={1}
         style={{
           fontSize: 12, // Smaller text to fit in reduced height
           fontWeight: '400',
@@ -456,7 +462,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         )}
         ListFooterComponent={
           isLoading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
+            <ActivityIndicator size="small" color="#000" />
           ) : (
             subCategoryData.length === 0 && (
               <View
@@ -602,8 +608,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
                         marginLeft: 16,
                         color: '#64646D',
                         fontSize: 14,
-                        fontWeight: '400',
-                        fontFamily: 'Poppins',
+                        // fontWeight: '400',
+                        fontFamily: 'Poppins-Medium',
                       }}>
                       {item.name}
                     </Text>
@@ -688,27 +694,26 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    // justifyContent: 'space-evenly',
   },
   filterName: {
     fontSize: 12,
     fontWeight: '400',
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
     lineHeight: 18,
     color: '#111111',
   },
   itemName: {
     fontSize: 12,
-    fontWeight: Platform.OS === 'android' ? '700' : '500',
+    // fontWeight: Platform.OS === 'android' ? '700' : '500',
     lineHeight: 16,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Medium',
     color: '#111111',
   },
   subtitle: {
     fontSize: 12,
-    fontWeight: '400',
+    // fontWeight: '400',
     lineHeight: 18,
-    fontFamily: 'Poppins',
+    fontFamily: 'Poppins-Regular',
     color: '#64646D',
   },
   modalOverlay: {
@@ -769,16 +774,18 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 14,
     color: '#111111',
+    fontFamily:'Poppins-Medium'
   },
   applyButton: {
     paddingVertical: 12,
     backgroundColor: '#111111',
+    
     borderRadius: 20,
     width: '48%',
     alignItems: 'center',
   },
   applyButtonText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: '#FFFFFF',fontFamily:'Poppins-Medium',
   },
 });

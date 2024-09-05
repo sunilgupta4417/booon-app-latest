@@ -1,22 +1,24 @@
 import { getDistance } from 'geolib';
 import moment from 'moment';
-import {Dimensions} from 'react-native'
+import { Dimensions } from 'react-native'
+import { Google_Api_Key } from '../config';
+import axios from 'axios';
 
 const heightMobileUI = 896;
 const widthMobileUI = 414;
 
 export const responsiveWidth = width => {
-    return (Dimensions.get('window').width * width) / widthMobileUI;
-  };
-  
-  export const responsiveHeight = height => {
-    return (Dimensions.get('window').height * height) / heightMobileUI;
-  };
+  return (Dimensions.get('window').width * width) / widthMobileUI;
+};
 
-  export function getDistanceFromLatLonInKm(
-    currentUserLocation,
-    warehouseLocation,
-    timing
+export const responsiveHeight = height => {
+  return (Dimensions.get('window').height * height) / heightMobileUI;
+};
+
+export function getDistanceFromLatLonInKm(
+  currentUserLocation,
+  warehouseLocation,
+  timing
 ) {
 
 
@@ -46,52 +48,54 @@ export const responsiveWidth = width => {
 
     // Haversine formula
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     // Distance in kilometers
     const distance = getDistance(
       { latitude: latitude, longitude: longitude },
       { latitude: lat2, longitude: lon2 }
-    )/1000;
-    
+    ) / 1000;
+
     const nowDate = new Date();
     const hour = nowDate.getHours().toString().padStart(2, '0');
     const minute = nowDate.getMinutes().toString().padStart(2, '0');
-    
     const currentTime = `${hour}:${minute}:00`
-    
     const checkIsTimeBetween = isTimeBetween(currentTime, timing?.startTime, timing?.endTime);
-
-    if (distance >= 20) { 
-      return  `Within next 4 hours`
-      // return `Product not deliver to your address.`
-    }
-
-
-    if (checkIsTimeBetween) { 
-      return distance <= 6 ? 'Within next 2 hours' : 'Within next 3-4 hours'
+    if (checkIsTimeBetween) {
+      if (distance >= 20) {
+        let extra = distance - 20;
+        extra = extra * 8 + 120
+        let times = toHoursAndMinutes(extra)
+        return `Within next `+ times.hours +' hours '+(times.minutes).toFixed(0)+' mins'
+      } else {
+        return 'Within next 2 hours'
+      }
     } else {
-      const tomorrow = moment().add(1, 'day').format('DD-MM-YYYY');
+      const tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
       const time = moment(timing?.startTime, 'HH:mm:ss');
       time.add(2, 'hours');
-      const newTime = time.format('HH:mm:ss');
-      return `Deliver by ${tomorrow} at ${newTime}`
+      const newTime = time.format('HH:mm A');
+      return `Delivery by ${tomorrow} at ${newTime}`
     }
   } catch (error) {
-
-    console.log(error,'errorerrorerrorerrorerror')
     return ''
   }
-   
+
+}
+
+function toHoursAndMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return { hours, minutes };
 }
 
 function isTimeBetween(current, start, end) {
   // Helper function to convert time string to minutes from midnight
   function timeToMinutes(time) {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours * 60 + minutes;
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   // Convert times to minutes from midnight
@@ -101,15 +105,14 @@ function isTimeBetween(current, start, end) {
 
   // Check if the current time is between start and end times
   if (startMinutes <= endMinutes) {
-      // When the end time is later in the day than the start time
-      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    // When the end time is later in the day than the start time
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
   } else {
-      // When the end time is earlier in the day (crosses midnight)
-      return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+    // When the end time is earlier in the day (crosses midnight)
+    return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
   }
 }
 
-  function deg2rad(deg) {
-    return deg * (Math.PI / 180);
-  }
-  
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
