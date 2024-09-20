@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Dimensions
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import CustomHeader from '../../components/CustomHeader';
@@ -28,6 +29,9 @@ import { AddressContainer } from '../../components/AddressContainer';
 import { useSelector } from 'react-redux';
 import { haversineDistance } from '../../helpers/phoneValidator';
 
+const width = Dimensions.get('window').width;
+const height = Dimensions.get('window').height;
+
 const BagScreen = ({ navigation }) => {
   const [cartData, setCartData] = useState([]);
   const [removeModal, setRemoveModal] = useState(false);
@@ -35,7 +39,7 @@ const BagScreen = ({ navigation }) => {
   const [modalData, setModalData] = useState();
   const [totalSP, setTotalSP] = useState();
   const [currentLocation, setCurrentLocation] = useState();
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState(1);
   const [sizeModal, setSizeModal] = useState(false);
   const [qtyModal, setQtyModal] = useState(false);
   const [selectedSizes, setSelectedSizes] = useState({});
@@ -56,8 +60,10 @@ const BagScreen = ({ navigation }) => {
   const [addListModal, setAddListModal] = useState(false);
   const grandTotal = totalSP - discountValue + shippingCharges;
   const { addressList } = useSelector(state => state.Cart);
-  const [DeleiveryTime,setDeleiveryTime] = useState('')
-  const [AddressLists, setAddressLists] = useState(addressList)
+  const [DeleiveryTime, setDeleiveryTime] = useState('')
+  const [AddressLists, setAddressLists] = useState(addressList);
+  const [dataOfSeller, setDataOfSeller] = useState([]);  // this is the collection of the seller data having all cart items.
+  const [totalItemCount, setTotalItemCount] = useState({});
 
   useEffect(() => {
     getCartData();
@@ -91,6 +97,7 @@ const BagScreen = ({ navigation }) => {
       id: modalData.id,
       action: 1,
     };
+    console.log("Data Remove Body! ==> " + JSON.stringify(body));
     const response = await axios.post(`${BASE_URL}/cart-item-action`, body, {
       headers,
     });
@@ -154,7 +161,7 @@ const BagScreen = ({ navigation }) => {
     }
   };
 
-  const getCartData = async () => {
+  const getCartData = async (couponValue) => {
     const savedToken = await AsyncStorage.getItem('token');
     const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     if (savedToken) {
@@ -164,37 +171,35 @@ const BagScreen = ({ navigation }) => {
       const body = {
         user_id: id,
         device_id: global.deviceId,
+        coupon_discount: couponValue
       };
       const response = await axios.post(`${BASE_URL}/cart-list`, body, {
         headers,
       });
-      console.log(response.data.data, 'getCartData');
+      // console.log("this is the Body of Cart List => ", JSON.stringify(body));
       if (response.data.status_code == 200) {
+        console.log("Here is the response data of CartList => ", JSON.stringify(response.data));
+        var tempArray = response?.data?.data;
+        // console.log("Response Cart => " + tempArray?.length);
+        var totalItemLength = 0
+        // //fetch length of cart Items 
+        if (tempArray?.length > 0) {
+          tempArray.forEach(item => {
+            totalItemLength = totalItemLength + item?.order_item.length;
+          })
+        }
+        setTotalItemCount(totalItemLength);
+        console.log("Total Item length => " + totalItemLength);
         setCartData(response.data.data);
-        let Data = response.data.data;
-        const totalSellPrice = Data.reduce(
-          (total, item) => total + parseFloat(item.sellprice) * item.quantity,
-          0,
-        );
-        const uniqueSellers = {};
-        Data.forEach(item => {
-          if (!uniqueSellers[item?.seller_id]) {
-            uniqueSellers[item?.seller_id] = item?.ShippingCharge;
-          }
-        });
-
-        const result = Object.keys(uniqueSellers).map(key => ({
-          seller_id: Number(key),
-          ShippingCharge: uniqueSellers[key],
-        }));
-
-        const totalShippingCharge = result.reduce(
-          (sum, item) => sum + item.ShippingCharge,
-          0,
-        );
         setTotalCartDetail(response.data);
-        setShippingCharges(totalShippingCharge);
-        setTotalSP(totalSellPrice);
+        setShippingCharges(response.data.total_shipping_charge);
+        setTotalSP(response.data.sub_total);
+        if (response?.data?.coupon_discount === null) {
+          setDiscountValue(0);
+        } else {
+          setDiscountValue(response?.data?.coupon_discount);
+        }
+        setDataOfSeller(tempArray);
         setLoading(false);
       }
     } else {
@@ -234,7 +239,146 @@ const BagScreen = ({ navigation }) => {
     setModalData(item);
   };
 
-  const renderLiveOrderItem = ({ item }) => {
+  const cartProductView = ({ item, index }) => (
+    <View style={[styles.row, { width: "100%", borderWidth: 0, marginVertical: 10 }]}>
+      <Image
+        style={{ width: responsiveWidth(89), height: responsiveWidth(118), }}
+        source={{ uri: item.product_image }}
+      />
+      <View style={{ paddingLeft: 10, justifyContent: "center", width: '70%' }}>
+        <Text style={styles.nameTxt}>{item.brandname}</Text>
+        <Text style={[styles.mobileTxt, { fontWeight: '400' }]}>
+          {item.shortdescription}
+        </Text>
+        <View
+          style={[
+            styles.row,
+            { marginVertical: 8, justifyContent: 'space-between', width: '70%' },
+          ]}>
+          <TouchableOpacity
+            style={[
+              styles.row,
+              {
+                borderWidth: 1,
+                borderColor: '#DEDEE0',
+                borderRadius: 20,
+                padding: 6,
+                marginRight: 5,
+              },
+            ]}
+            onPress={() => {
+              setSizeModal(true);
+              setSizesList(item?.product_size);
+              setModalData(item);
+            }}>
+            <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
+              Size :{' '}
+              <Text style={{ fontWeight: '500' }}>
+                {JSON.parse(item.options)?.Size}
+              </Text>
+            </Text>
+            <Image
+              style={{ height: 6, width: 10, margin: 4 }}
+              source={require('../../assets/Home/down.png')}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setModalData(item);
+              setQtyModal(true);
+              setSelectedQty([item?.quantity]);
+            }}
+            style={[
+              styles.row,
+              {
+                borderWidth: 1,
+                borderColor: '#DEDEE0', 
+                borderRadius: 20,
+                padding: 6,
+              },
+            ]}>
+            <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
+              Qty : <Text style={{ fontWeight: '500' }}>{item?.quantity}</Text>
+            </Text>
+            <Image
+              style={{ height: 6, width: 10, margin: 4 }}
+              source={require('../../assets/Home/down.png')}
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.nameTxt, { marginTop: 0 }]}>
+          ₹{item.sellprice}
+          <Text
+            style={{
+              fontWeight: '400',
+              color: '#64646D99',
+              textDecorationLine: 'line-through',
+            }}>
+            {' '}
+            ₹{parseInt(item.costprice)}{' '}
+          </Text>{' '}
+          <Text style={{ color: '#5EB160' }}>
+            {' '}
+            {((item.sellprice / item.costprice) * 100).toFixed()}% OFF
+          </Text>
+        </Text>
+        {discountValue > 0 ? (
+          <Text style={{
+            fontSize: 12,
+            fontWeight: Platform.OS == 'android' ? '500' : '500',
+            fontFamily: 'Poppins-Bold',
+            lineHeight: 16,
+            color: '#111111', marginTop: 0
+          }}>
+            Coupon Discount:{" "}
+            <Text
+              style={{
+                fontWeight: '400',
+                color: '#64646D99',
+                // textDecorationLine: 'line-through',
+              }}>
+              {' '}
+              ₹{parseInt((item.total_amount / totalSP) * discountValue)}{' '}
+            </Text>{' '}
+          </Text>
+        ) : null}
+        <Text style={{
+          fontSize: 12,
+          fontWeight: Platform.OS == 'android' ? '500' : '500',
+          fontFamily: 'Poppins-Bold',
+          lineHeight: 16,
+          color: '#111111', marginTop: 0,
+        }}>
+          {item.delivery_time === null ? "" : item.delivery_time}
+        </Text>
+
+        <Text style={{ fontWeight: '400', color: '#64646D99' }}>
+          {getDistanceFromLatLonInKm(
+            {
+              latitude: currentLocation?.Latitude,
+              longitude: currentLocation?.Longitude,
+            },
+            { latitude: item?.Latitude, longitude: item?.Longitude },
+            {
+              startTime: item?.workinng_start_time,
+              endTime: item?.workinng_end_time,
+            },
+          )}
+        </Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => openRemoveModal(item)}
+        style={{ position: "absolute", right: 25, alignSelf: 'flex-start', marginTop: 0 }}>
+        <Image
+          style={{ height: 20, width: 20 }}
+          source={require('../../assets/remove.png')}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+
+  const renderLiveOrderItem = ({ item, index }) => {
     setDeleiveryTime(getDistanceFromLatLonInKm(
       {
         latitude: currentLocation?.Latitude,
@@ -247,110 +391,63 @@ const BagScreen = ({ navigation }) => {
       },
     ))
     return (
-      <View style={[styles.profileView, styles.row]}>
-        <Image
-          style={{ width: responsiveWidth(89), height: responsiveWidth(118) }}
-          source={{ uri: item.product_image }}
-        />
-        <View style={{ padding: 10, borderWidth: 0, width: '70%' }}>
-          <Text style={styles.nameTxt}>{item.brandname}</Text>
-          <Text style={[styles.mobileTxt, { fontWeight: '400' }]}>
-            {item.shortdescription}
-          </Text>
-          <View
-            style={[
-              styles.row,
-              { marginVertical: 8, justifyContent: 'space-between', width: '60%' },
-            ]}>
-            <TouchableOpacity
-              style={[
-                styles.row,
-                {
-                  borderWidth: 1,
-                  borderColor: '#DEDEE0',
-                  borderRadius: 20,
-                  padding: 6,
-                  marginRight: 5,
-                },
-              ]}
-              onPress={() => {
-                setSizeModal(true);
-                setSizesList(item?.product_size);
-                setModalData(item);
-              }}>
-              <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
-                Size :{' '}
-                <Text style={{ fontWeight: '500' }}>
-                  {JSON.parse(item.options)?.Size}
-                </Text>
-              </Text>
-              <Image
-                style={{ height: 6, width: 10, margin: 4 }}
-                source={require('../../assets/Home/down.png')}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setModalData(item);
-                setQtyModal(true);
-                setSelectedQty([item?.quantity]);
-              }}
-              style={[
-                styles.row,
-                {
-                  borderWidth: 1,
-                  borderColor: '#DEDEE0',
-                  borderRadius: 20,
-                  padding: 6,
-                },
-              ]}>
-              <Text style={[styles.nameTxt, { fontWeight: '400' }]}>
-                Qty : <Text style={{ fontWeight: '500' }}>{item?.quantity}</Text>
-              </Text>
-              <Image
-                style={{ height: 6, width: 10, margin: 4 }}
-                source={require('../../assets/Home/down.png')}
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.nameTxt, { marginTop: 0 }]}>
-            ₹{item.sellprice}
-            <Text
-              style={{
-                fontWeight: '400',
-                color: '#64646D99',
-                textDecorationLine: 'line-through',
-              }}>
-              {' '}
-              ₹{parseInt(item.costprice)}{' '}
-            </Text>{' '}
-            <Text style={{ color: '#5EB160' }}>
-              {' '}
-              {((item.sellprice / item.costprice) * 100).toFixed()}% OFF
-            </Text>
-          </Text>
-          <Text style={{ fontWeight: '400', color: '#64646D99' }}>
-            {getDistanceFromLatLonInKm(
-              {
-                latitude: currentLocation?.Latitude,
-                longitude: currentLocation?.Longitude,
-              },
-              { latitude: item?.Latitude, longitude: item?.Longitude },
-              {
-                startTime: item?.workinng_start_time,
-                endTime: item?.workinng_end_time,
-              },
-            )}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => openRemoveModal(item)}
-          style={{ alignSelf: 'flex-start', marginTop: 10 }}>
-          <Image
-            style={{ height: 20, width: 20 }}
-            source={require('../../assets/remove.png')}
+      <View style={{ width: "95%", alignSelf: "center", borderWidth: 0 }}>
+        {/* Parent Header View, For Seller/Company Name */}
+        <View style={{ width: "95%", alignSelf: "center", borderWidth: 0 }}>
+          {/* <View style={{
+            height: 50, width: "100%", borderWidth: 0, backgroundColor: "white", borderRadius: 10, shadowColor: "#000",
+            shadowOffset: {
+              width: 0,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+            justifyContent: "center",
+            paddingLeft: 10
+          }}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: Platform.OS == 'android' ? '700' : '500',
+              lineHeight: 16,
+              fontFamily: 'Poppins-Bold',
+              color: '#111111',
+            }}>{item?.companyname}</Text>
+          </View> */}
+          {/* List of Products (order_item) */}
+          <FlatList
+            data={item.order_item}
+            renderItem={cartProductView}
+            keyExtractor={(product) => product.id.toString()}
+            scrollEnabled={false}
           />
-        </TouchableOpacity>
+          {/* <View style={{
+            height: 50, width: "100%", borderWidth: 0, backgroundColor: "white", borderRadius: 10,
+            // justifyContent: "center",
+            alignItems: "center",
+            paddingLeft: 10,
+            flexDirection: "row",
+            marginBottom: 10,
+            display: "flex"
+          }}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: Platform.OS == 'android' ? '700' : '500',
+              lineHeight: 16,
+              fontFamily: 'Poppins-Bold',
+              color: '#111111',
+              width: "75%"
+            }}>Shipping Charges for {item?.companyname.length > 8 ? item?.companyname.substring(0, 8) + "..." : item?.companyname}</Text>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: Platform.OS == 'android' ? '700' : '500',
+              lineHeight: 16,
+              fontFamily: 'Poppins-Bold',
+              color: '#111111',
+              textAlign: "right"
+            }}>₹{parseInt(item?.ShippingCharge)}{' '}<Text style={{ fontSize: 12, fontWeight: Platform.OS == 'android' ? '700' : '500', lineHeight: 16, fontFamily: 'Poppins-Bold', color: item.Distance > 20 ? "red" : '#111111', }}>({item.Distance} KM)</Text></Text>
+          </View> */}
+        </View>
       </View>
     )
   }
@@ -389,7 +486,7 @@ const BagScreen = ({ navigation }) => {
     setCouponValue('');
   };
 
-  const onPressApply = () => {
+  const onPressApply = async () => {
     const checkIsExist = couponList?.filter(i => i.disc_code === txtCoupon);
     if (checkIsExist.length > 0) {
       const couponData = checkIsExist[0];
@@ -400,7 +497,9 @@ const BagScreen = ({ navigation }) => {
       const checkIsExpired = today >= startDate && today <= endDate;
       if (checkIsExpired) {
         if (totalSP > couponData?.MinimumOrder) {
+          console.log("This is just test of Amount => ", JSON.stringify(couponData));
           setDiscountValue(couponData?.discountvalue);
+          await getCartData(couponData?.discountvalue);
           Alert.alert('Success', `Coupon applied successfully.`);
         } else {
           Alert.alert(
@@ -422,106 +521,159 @@ const BagScreen = ({ navigation }) => {
 
   const CreateOrderButton = () => {
     const onPressPlaceOrder = async () => {
-      setLoading(true);
-      // {{BASE_URL}}/profile
-      const savedToken = await AsyncStorage.getItem('token');
-      const userLocation = JSON.parse(
-        await AsyncStorage.getItem('userCurrentLocation'),
-      );
-      const headers = {
-        Authorization: `Bearer ${savedToken}`,
-      };
-      const response = await axios.get(`${BASE_URL}/profile`, { headers });
-      const id = await DeviceInfo.getUniqueId();
-      const { fname, mobile, lname, id: userId } = response.data;
-      const order = totalCartDetail?.data || [];
-      let subtotal = 0;
-      let orderTotal = 0;
-      order.map(item => {
-        subtotal = subtotal + item?.sellprice * item?.quantity;
-
-        orderTotal =
-          orderTotal + item?.sellprice * item?.quantity + item?.ShippingCharge;
+      let tempFlag = false;
+      dataOfSeller.forEach((dataItem) => {
+        if (dataItem.Distance > 30) {
+          tempFlag = true;
+        }
       });
+      if (!tempFlag) {
+        setLoading(true);
+        // {{BASE_URL}}/profile
+        const savedToken = await AsyncStorage.getItem('token');
+        const userLocation = JSON.parse(
+          await AsyncStorage.getItem('userCurrentLocation'),
+        );
+        const headers = {
+          Authorization: `Bearer ${savedToken}`,
+        };
+        const response = await axios.get(`${BASE_URL}/profile`, { headers });
+        const id = await DeviceInfo.getUniqueId();
+        const { fname, mobile, lname, id: userId } = response.data;
+        const order = totalCartDetail?.data || [];
+        // let subtotal = 0;
+        // let orderTotal = 0;
+        // order.map(item => {
+        //   subtotal = subtotal + item?.sellprice * item?.quantity;
 
-      const typePayment = selected == 0 ? '2' : '1';
+        //   orderTotal =
+        //     orderTotal + item?.sellprice * item?.quantity + item?.ShippingCharge;
+        // });
 
-      const myHeaders = new Headers();
-      // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-      myHeaders.append('Authorization', `Bearer ${savedToken}`);
+        const typePayment = selected == 0 ? '2' : '1';
 
-      const urlencoded = new FormData();
-      urlencoded.append('user_id', userId);
-      // urlencoded.append('device_id', id);
-      urlencoded.append('device_id', global.deviceId);
-      urlencoded.append('first_name', fname);
-      urlencoded.append('last_name', lname);
-      urlencoded.append('address', userLocation.address);
-      urlencoded.append('landmark', userLocation.landmark || '');
-      urlencoded.append('city', userLocation.city);
-      urlencoded.append('state', userLocation.state);
-      urlencoded.append('zipcode', userLocation.zipcode);
-      urlencoded.append('country', userLocation.city);
-      urlencoded.append('shipping_charge', shippingCharges);
-      urlencoded.append('order_subtotal', subtotal);
-      urlencoded.append('order_totals', orderTotal);
-      urlencoded.append('order_status', typePayment);
-      // order_status
-      urlencoded.append('payment_mode', selected);
-      urlencoded.append('txt_status', '');
-      urlencoded.append('cs_latitude', userLocation.Latitude);
-      urlencoded.append('cs_longitude', userLocation.Longitude);
-      urlencoded.append('shipping_buil_flat_no', userLocation.address);
-      urlencoded.append('shipping_street_add', userLocation.address);
-      urlencoded.append('mobile', mobile);
-      // urlencoded.append('user_id', '178');
-      // urlencoded.append('device_id', global.deviceId);
+        const myHeaders = new Headers();
+        // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+        myHeaders.append('Authorization', `Bearer ${savedToken}`);
 
-      const requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: urlencoded,
-        redirect: 'follow',
-      };
+        const urlencoded = new FormData();
+        urlencoded.append('user_id', userId);
+        // urlencoded.append('device_id', id);
+        urlencoded.append('device_id', global.deviceId);
+        urlencoded.append('first_name', fname);
+        urlencoded.append('last_name', lname);
+        urlencoded.append('address', userLocation.address);
+        urlencoded.append('landmark', userLocation.landmark || '');
+        urlencoded.append('city', userLocation.city);
+        urlencoded.append('state', userLocation.state);
+        urlencoded.append('zipcode', userLocation.zipcode);
+        urlencoded.append('country', userLocation.city);
+        urlencoded.append('shipping_charge', shippingCharges);
+        urlencoded.append('order_subtotal', totalSP - 20);
+        urlencoded.append('order_totals', totalSP);
+        urlencoded.append('order_status', typePayment);
+        // order_status
+        urlencoded.append('payment_mode', selected);
+        urlencoded.append('txt_status', '');
+        urlencoded.append('cs_latitude', userLocation.Latitude);
+        urlencoded.append('cs_longitude', userLocation.Longitude);
+        urlencoded.append('shipping_buil_flat_no', userLocation.address);
+        urlencoded.append('shipping_street_add', userLocation.address);
+        urlencoded.append('mobile', mobile);
+        // urlencoded.append('user_id', '178');
+        // urlencoded.append('device_id', global.deviceId);
 
-      fetch(BASE_URL + '/create-order', requestOptions)
-        .then(response => response.json())
-        .then(result => {
-          if (selected === 1) {
-            let urlencoded = new FormData();
-            urlencoded.append('order_id', result?.order_ids[0]);
-            urlencoded.append('amount', orderTotal);
-            const requestOptions = {
-              method: 'POST',
-              headers: myHeaders,
-              body: urlencoded,
-              redirect: 'follow',
-            };
+        const requestOptions = {
+          method: 'POST',
+          headers: myHeaders,
+          body: urlencoded,
+          redirect: 'follow',
+        };
 
-            fetch('https://api.booon.in/api/ccavenue-order', requestOptions)
-              .then(response => response.json())
-              .then(result => {
-                navigation.navigate('WebViewPage', { response: result });
-              })
-              .catch(error => console.error(error));
-            setLoading(false);
-          } else {
-            if (result) {
-              navigation.replace('OrderSuccess', {
-                payload: urlencoded,
-                orderResponse: result,
-                DeleiveryTime:DeleiveryTime
-              });
+        fetch(BASE_URL + '/create-order', requestOptions)
+          .then(response => response.json())
+          .then((result) => {
+            if (selected === 1) {
+              // callPaymentScreen(result?.order_ids[0], orderTotal, savedToken);
+
+              const myHeaderPay = new Headers();
+              myHeaderPay.append("Accept", "application/json");
+              // myHeaderPay.append("Content-Type", "application/x-www-form-urlencoded");
+              myHeaderPay.append("Authorization", `Bearer ${savedToken}`);
+
+              console.log("OBJ ==> " + JSON.stringify({
+                "order_id": result?.order_ids[0].toString(),
+                "amount": totalSP.toString()
+              }));
+
+              const urlencodedPay = new FormData();
+              urlencodedPay.append("order_id", result?.order_ids[0]);
+              urlencodedPay.append("amount", totalSP);
+              // const urlencodedPay = new FormData();
+              // urlencodedPay.append("order_id", "262");
+              // urlencodedPay.append("amount", "300");
+
+              const requestConfig = {
+                method: "POST",
+                headers: myHeaderPay,
+                body: urlencodedPay,
+                redirect: "follow"
+              };
+
+              fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
+                .then((response) => response.json())
+                .then((result) => {
+                  console.log("Amount Result ==> " + JSON.stringify(result));
+                  navigation.navigate('WebViewPage', { response: result });
+                })
+                .catch((error) => console.error(error));
+
+
+
+              // let urlencoded = new FormData();
+              // urlencoded.append('order_id', result?.order_ids[0]);
+              // urlencoded.append('amount', orderTotal);
+              // const myHeadersForPayment = new Headers();
+              // // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+              // myHeadersForPayment.append("Content-Type", "application/x-www-form-urlencoded");
+              // myHeadersForPayment.append('Authorization', `Bearer ${savedToken}`);
+
+              // const requestOptions = {
+              //   method: 'POST',
+              //   headers: myHeadersForPayment,
+              //   body: urlencoded,
+              //   redirect: 'follow',
+              // };
+
+              // fetch(`${BASE_URL}/ccavenue-order`, requestOptions)
+              //   .then(response => response.json())
+              //   .then(result => {
+              //     console.log("Amount Result ==> " + JSON.stringify(result));
+              //     navigation.navigate('WebViewPage', { response: result });
+              //   })
+              //   .catch(error => console.error(error));
+              setLoading(false);
             } else {
-              Alert.alert('Something went wrong');
+              if (result) {
+                navigation.replace('OrderSuccess', {
+                  payload: urlencoded,
+                  orderResponse: result,
+                  DeleiveryTime: DeleiveryTime
+                });
+              } else {
+                Alert.alert('Something went wrong');
+              }
+              setLoading(false);
             }
+          })
+          .catch(error => {
+            console.error(error);
             setLoading(false);
-          }
-        })
-        .catch(error => {
-          console.error(error);
-          setLoading(false);
-        });
+          });
+      } else {
+        Alert.alert('Some selected products are not in service area, Please choose another address.');
+      }
+
     };
     return (
       <ButtonComp
@@ -633,6 +785,8 @@ const BagScreen = ({ navigation }) => {
         payload.Longitude = detail?.Longitude;
         payload.address = detail?.address;
 
+        console.log("Here is the Body Payload => " + payload);
+
         navigation.navigate('AddAddress', {
           from: 'cart',
           addressDetails: payload,
@@ -646,7 +800,17 @@ const BagScreen = ({ navigation }) => {
           },
         });
       } else {
+        // let tempFlag = false;
+        // dataOfSeller.forEach((dataItem) => {
+        //   if (dataItem.Distance > 20) {
+        //     tempFlag = true;
+        //   }
+        // });
+        // if (tempFlag) {
+        //   Alert.alert('Some selected products are not in service area, Please choose another address.');
+        // } else {
         setAddListModal(true)
+        // }
       }
     };
     return (
@@ -763,16 +927,6 @@ const BagScreen = ({ navigation }) => {
     />
   );
 
-  useEffect(() => {
-    const setCuuL = async () => {
-      const userLocation = JSON.parse(
-        await AsyncStorage.getItem('userCurrentLocation'),
-      );
-      setCurrentLocation(userLocation);
-      setUserCurrentAddress(userLocation)
-    }
-    setCuuL()
-  }, [isProceed])
 
   const OrderProceedBtn = () => {
     return (
@@ -789,18 +943,18 @@ const BagScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {cartData.length > 0 ? (
+      {dataOfSeller.length > 0 ? (
         <>
           <CustomHeader
             back
-            title={`Bag (${cartData?.length > 0 && cartData?.length <= 9
-              ? '0' + cartData?.length
-              : cartData?.length
-              })`}
+            title={`Bag (${totalItemCount})`}
           />
           <ScrollView>
             <View>
-              <FlatList data={cartData} renderItem={renderLiveOrderItem} />
+              <FlatList data={dataOfSeller} contentContainerStyle={{ paddingVertical: 15 }} renderItem={renderLiveOrderItem} keyExtractor={(item) => item.seller_id.toString()} />
+              {/* {dataOfSeller.map((item, index) => (
+                renderLiveOrderItem(item, index)
+              ))} */}
             </View>
             <View style={[styles.row, { margin: 16 }]}>
               <TextInput
@@ -824,7 +978,7 @@ const BagScreen = ({ navigation }) => {
             <View
               style={{ backgroundColor: '#F3F3F6B2', margin: 16, padding: 16 }}>
               <Text style={styles.nameTxt}>
-                Price Details ({cartData?.length} Items)
+                Price Details ({totalItemCount} Items)
               </Text>
               <View
                 style={{
@@ -867,7 +1021,7 @@ const BagScreen = ({ navigation }) => {
                   borderBottomWidth: 1,
                   borderColor: '#DEDEE0',
                 }}>
-                <Text style={styles.font12}>Shipping Fee</Text>
+                <Text style={styles.font12}>Shipping Charges(Non refundable)</Text>
                 <Text
                   style={{
                     fontFamily: 'Inter',
@@ -876,7 +1030,6 @@ const BagScreen = ({ navigation }) => {
                     color: '#16A34A',
                   }}>
                   ₹{20}
-                  {/* shippingCharges */}
                 </Text>
               </View>
               <View
@@ -925,7 +1078,6 @@ const BagScreen = ({ navigation }) => {
               backgroundColor: '#FFFFFF',
             }}>
             {NoLocation ? <View><Text style={{ color: '#333', fontFamily: 'Poppins-Medium' }}>No Delivery at your Location</Text></View> : <AddressDelivery />}
-
             {isProceed ? <OrderProceedBtn /> : <OrderPlacePopup />}
           </View>
 
@@ -984,14 +1136,14 @@ const BagScreen = ({ navigation }) => {
                     you can move it to your wishlist for later.
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                  <ButtonComp
+                <View style={{ flexDirection: 'row',justifyContent:"center", marginBottom: 10 }}>
+                  {/* <ButtonComp
                     title={'Move to Wishlist'}
                     bdrColor={'#DEDEE0'}
                     txtColor={'#21212F'}
                     width={'45%'}
                     padding={2}
-                  />
+                  /> */}
                   <ButtonComp
                     onPress={removeProduct}
                     title={'Yes, Remove'}
@@ -1036,32 +1188,6 @@ const BagScreen = ({ navigation }) => {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setSelected(0)}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-evenly',
-                    width: '90%',
-                    borderColor: selected == 0 ? '#000000' : '#00000033',
-                    borderWidth: 1,
-                    padding: 10,
-                    alignSelf: 'center',
-                    marginBottom: 15,
-                  }}>
-                  <View
-                    style={{
-                      height: 30,
-                      width: 30,
-                      borderRadius: 15,
-                      borderWidth: 1,
-                      borderColor: selected == 0 ? '#000000' : '#00000033',
-                      backgroundColor: selected == 0 ? '#000000' : '#FFFFFF',
-                    }}></View>
-                  <View>
-                    <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay on delivery</Text>
-                    <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Cash or UPI to the delivery partner</Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
                   onPress={() => setSelected(1)}
                   style={{
                     flexDirection: 'row',
@@ -1085,6 +1211,32 @@ const BagScreen = ({ navigation }) => {
                   <View>
                     <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay now online</Text>
                     <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Credit/Debit Card, Netbanking, UPI</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSelected(0)}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-evenly',
+                    width: '90%',
+                    borderColor: selected == 0 ? '#000000' : '#00000033',
+                    borderWidth: 1,
+                    padding: 10,
+                    alignSelf: 'center',
+                    marginBottom: 15,
+                  }}>
+                  <View
+                    style={{
+                      height: 30,
+                      width: 30,
+                      borderRadius: 15,
+                      borderWidth: 1,
+                      borderColor: selected == 0 ? '#000000' : '#00000033',
+                      backgroundColor: selected == 0 ? '#000000' : '#FFFFFF',
+                    }}></View>
+                  <View>
+                    <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay on delivery</Text>
+                    <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Cash or UPI to the delivery partner</Text>
                   </View>
                 </TouchableOpacity>
                 <CreateOrderButton />
@@ -1254,14 +1406,14 @@ const BagScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
                 <FlatList data={AddressLists} renderItem={renderAddresses} />
-                <ButtonComp
+                {/* <ButtonComp
                   onPress={addAddressModal}
                   title={'Add Address'}
                   imgStyle={{ width: 14, height: 14, marginRight: 5 }}
                   width={'40%'}
                   color={'#111111'}
                   txtColor={'#FFFFFF'}
-                />
+                /> */}
               </View>
             </View>
           </Modal>

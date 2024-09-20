@@ -172,7 +172,7 @@ const AddAddress = ({navigation, route: {params}}) => {
       // street_add:street,
     };
     // params?.addressDetails ? (body.id = params?.addressDetails.id) : null;
-    console.log(body, 'bodyy', savedToken);
+    console.log(body, 'TWO BODIES', savedToken);
     const headers = {
       Authorization: `Bearer ${savedToken}`,
     };

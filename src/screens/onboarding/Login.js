@@ -139,9 +139,11 @@ const Login = ({ navigation, route }) => {
           lineHeight: 16,
         }}>
         By clicking. I accept the terms of{' '}
-        <Text style={{ textDecorationLine: 'underline' }}>
-          service and privacy policy.
-        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('WebViewComp', 'm-privacy-policy')}>
+          <Text style={{ textDecorationLine: 'underline' }}>
+            service and privacy policy.
+          </Text>
+        </TouchableOpacity>
       </Text>
     </SafeAreaView>
   );

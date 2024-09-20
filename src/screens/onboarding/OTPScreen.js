@@ -33,13 +33,13 @@ const OTPScreen = ({navigation, route: {params}}) => {
           navigation.navigate('SelectLocation');
         } else {
           // navigation.navigate('HomeScreen');
+          await AsyncStorage.setItem('@login', 'true');
           navigation.dispatch(
             CommonActions.reset({
               index: 1,
               routes: [
                 {
                   name: 'HomeScreen',
-                  // params: { user: 'jane' },
                 },
               ],
             })
@@ -96,7 +96,7 @@ const OTPScreen = ({navigation, route: {params}}) => {
         tintColor="#21212F" // Active input underline color
         offTintColor="#DEDEE0" // Inactive input underline color
         textInputStyle={{borderBottomWidth: 1, borderWidth: 1, borderRadius: 5}}
-        containerStyle={{width: '100%', alignSelf: 'center'}}
+        containerStyle={{width: '100%', alignSelf: 'center', paddingHorizontal: 15}}
       />
       <ButtonComp
         onPress={verifyOTP}

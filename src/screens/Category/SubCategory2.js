@@ -23,7 +23,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 const width = Dimensions.get('window').width;
 
-
 const SubCategory2 = ({ navigation, route: { params } }) => {
   const dispatch = useDispatch();
   const filterSort = useRef({});
@@ -51,7 +50,10 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     { lable: 'Popularity', value: 'popular' },
     { lable: 'Price - High to Low', value: 'high_to_low' },
     { lable: 'Price - Low to High', value: 'low_to_high' }
-  ]
+  ];
+  const [isCategorySelected, setIsCategorySelected] = useState(false);
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState();
+  const updateIndexStatus = useRef({});
 
   useFocusEffect(
     useCallback(() => {
@@ -70,13 +72,13 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   }, []);
 
   const getCount = async () => {
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     const body = {
       user_id: id,
       device_id: global.deviceId,
     };
     const response = await axios.post(`${BASE_URL}/counting`, body);
-    dispatch({type: 'BAG_COUNT', payload: response.data});
+    dispatch({ type: 'BAG_COUNT', payload: response.data });
   };
 
   const getFilter = async () => {
@@ -93,8 +95,9 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       url = url + `&subsubcat_id=${subCategoryId.current}`;
     }
     console.log('-=-=-url-=-=url-=-=-', url);
-    
+
     const res = await axios.get(url);
+    console.log("Here is the Res Data => " + JSON.stringify(res));
     if (res?.data) {
       setFilterData(res?.data);
     }
@@ -114,7 +117,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       ...(params.subsubcat_id && { subsubcat_id: params.subsubcat_id }),
     };
     console.log('-=-=-paramsData-=-=-paramsData-=-=', paramsData);
-    
+
     const response = await axios.post(
       `${BASE_URL}/sub-sub-category`,
       paramsData,
@@ -124,6 +127,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     setSubCategory(res?.data || []);
 
   };
+
+
 
   const renderSubCategory = ({ item }) => (
     <TouchableOpacity
@@ -181,6 +186,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       seller_id: global.sellerId,
       ...filterSort.current,
     };
+
     if (no_of_item) {
       body.no_of_item = no_of_item;
     }
@@ -247,12 +253,28 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     }
   };
 
-  const renderHeaderCat = ({ item }) => (
+  const handleSelect = (item, index) => {
+    let tempValue = {};
+    tempValue.isCategorySelected = true;
+    tempValue.selectedCategoryIndex = index;
+    updateIndexStatus.current = tempValue;
+    subCategoryId.current = item?.cat_id;
+    let category = { subsubcat_id: [item?.cat_id] }
+    closeFilterApply({ ...AppliedFilter, ...category })
+
+    try {
+      flatListRef.current?.scrollToIndex({ animated: false, index });
+    } catch (error) {
+      console.warn('Scroll to index failed', error);
+    }
+  };
+
+  const renderHeaderCat = ({ item, index }) => (
     <TouchableOpacity
       onPress={() => {
-        subCategoryId.current = item?.cat_id;
-        let category = {subsubcat_id:[item?.cat_id]}
-        closeFilterApply({...AppliedFilter, ...category})
+        // setSelectedCategoryIndex(index);
+        // setIsCategorySelected(!isCategorySelected);
+        handleSelect(item, index);
       }}
       style={{
         alignItems: 'center',
@@ -265,15 +287,18 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           height: 64,
           width: 64,
           borderRadius: 37,
+          borderWidth: 3,
+          borderColor: updateIndexStatus.current.isCategorySelected && index === updateIndexStatus.current.selectedCategoryIndex ? "black" : "transparent",
+          padding: 5,
           margin: 5, // Adjusted margin for spacing
         }}
         source={{ uri: item.image }}
       />
       <Text
-      numberOfLines={1}
+        numberOfLines={1}
         style={{
-          fontSize: 12, // Smaller text to fit in reduced height
-          fontWeight: '400',
+          fontSize: updateIndexStatus.current.isCategorySelected && index === updateIndexStatus.current.selectedCategoryIndex ? 12.5 : 12, // Smaller text to fit in reduced height
+          fontWeight: updateIndexStatus.current.isCategorySelected && index === updateIndexStatus.current.selectedCategoryIndex ? "bold" : '400',
           lineHeight: 18,
           fontFamily: 'Poppins',
           color: '#212121',
@@ -281,7 +306,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         {item.name}
       </Text>
     </TouchableOpacity>
-  );
+  ); 
 
   const FilterListing = () => {
     return (
@@ -352,27 +377,27 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     );
   };
 
-  const _handleGenderFilter = (genderVAl) => {
+  const _handleGenderFilter = async (genderVAl) => {
     setGender(genderVAl)
-    let genders = {gender:genderVAl}
+    let genders = { gender: genderVAl }
     setGenderModal(false)
-    closeFilterApply({...AppliedFilter, ...genders})
+    closeFilterApply({ ...AppliedFilter, ...genders });
   }
 
   const _handleSizeFIlter = () => {
-  let size = {size:selectedSizes}
+    let size = { size: selectedSizes }
     setSizeModal(false)
-    closeFilterApply({...AppliedFilter, ...size})
+    closeFilterApply({ ...AppliedFilter, ...size })
   }
 
   const _handleSortBy = (sort) => {
     setSortBy(sort);
-    let short = {short:sort}
+    let short = { short: sort }
     setSortModal(false)
-    closeFilterApply({...AppliedFilter, ...short})
+    closeFilterApply({ ...AppliedFilter, ...short })
   }
 
-  const closeFilterApply = (value) => {
+  const closeFilterApply = async (value) => {
     if (Object.keys(value).length > 0) {
       setAppliedFilter(value)
       let filterValue = {};
@@ -408,13 +433,17 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       if (value?.price && value?.price !== '') {
         filterValue.price = value?.price;
       }
+
       filterSort.current = filterValue;
       getProductList(1);
       setFilterModal(false);
+      await getFilter();
     } else {
       filterSort.current = {};
       getProductList(1);
       setFilterModal(false);
+      setAppliedFilter({});
+      await getFilter();
     }
   }
 
@@ -431,12 +460,13 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         onEndReachedThreshold={0.5}
         ListHeaderComponent={() => (
           <>
-            <View style={params.bannerData || params.brandname || params.height ? {} : { height: 100 }}>
+            <View style={params.bannerData || params.brandname || params.height ? {} : { height: 100, }}>
               <FlatList
                 data={subcategory}
                 renderItem={renderHeaderCat}
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}
+                keyExtractor={(item, index) => index.toString()} // Ensure unique key
               />
             </View>
             <View
@@ -477,11 +507,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           )
         }
       />
-      {/* :
-      <View style={{justifyContent:'center',alignItems:'center'}}>
-        <Text>No Vendor available for you location</Text>
-      </View>
-      } */}
+      {/* Sort By Filter! */}
       <FilterModal
         isVisible={sortModal}
         onBackButtonPress={() => {
@@ -523,6 +549,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           </View>
         </View>
       </FilterModal>
+      {/* Gender Filter! */}
       <FilterModal
         isVisible={genderModal}
         onBackButtonPress={() => {
@@ -565,6 +592,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           </View>
         </View>
       </FilterModal>
+      {/* Size Filter */}
       <FilterModal
         isVisible={sizeModal}
         onBackButtonPress={() => {
@@ -587,12 +615,12 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
               <Text style={styles.modalTitle}>Size</Text>
             </View>
             <View style={{ maxHeight: 300 }}>
-              <FlatList 
+              <FlatList
                 data={filterData?.size}
                 extraData={filterData?.size}
                 numColumns={3}
-                renderItem={({item})=>(
-                  <View key={item.name} style={[styles.option,{width:'33%'}]}>
+                renderItem={({ item }) => (
+                  <View key={item.name} style={[styles.option, { width: '33%' }]}>
                     <CheckBox
                       value={selectedSizes.includes(item.name)}
                       onValueChange={() => toggleSize(item.name)}
@@ -658,6 +686,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           </View>
         </View>
       </FilterModal>
+      {/* Side Filter! */}
       <FilterModal
         isVisible={filterModal}
         onBackButtonPress={() => {
@@ -774,18 +803,18 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 14,
     color: '#111111',
-    fontFamily:'Poppins-Medium'
+    fontFamily: 'Poppins-Medium'
   },
   applyButton: {
     paddingVertical: 12,
     backgroundColor: '#111111',
-    
+
     borderRadius: 20,
     width: '48%',
     alignItems: 'center',
   },
   applyButtonText: {
     fontSize: 14,
-    color: '#FFFFFF',fontFamily:'Poppins-Medium',
+    color: '#FFFFFF', fontFamily: 'Poppins-Medium',
   },
 });

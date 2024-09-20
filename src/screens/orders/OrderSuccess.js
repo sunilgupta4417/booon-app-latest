@@ -6,15 +6,15 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import cross from '../../assets/cross.png';
-import {Image} from 'react-native-elements';
+import { Image } from 'react-native-elements';
 import successImage from '../../assets/ordersuccess.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import {BASE_URL} from '../../config';
+import { BASE_URL } from '../../config';
 
-export default function OrderSuccess({navigation, route}) {
+export default function OrderSuccess({ navigation, route }) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const routeData = route.params;
@@ -29,13 +29,22 @@ export default function OrderSuccess({navigation, route}) {
         Authorization: `Bearer ${savedToken}`,
       };
 
-      const response = await axios.get(
-        `${BASE_URL}/cancel-order/${routeData.orderResponse.order_ids[0]}`,
-        {headers},
+      console.log("this is the order ids =>> " + routeData.orderResponse.order_ids);
+
+      const body = JSON.stringify({
+        id: routeData.orderResponse.order_ids
+      });
+
+      const response = await axios.post(
+        `${BASE_URL}/cancel-order`,
+        { body },
+        { headers },
       );
 
+      console.log("Cancel order response =>> " + JSON.stringify(response));
+
       if (response?.status == 200) {
-        navigation.navigate('Account', {response});
+        navigation.navigate('Account', { response });
       }
       setLoading(false);
     };
@@ -54,7 +63,7 @@ export default function OrderSuccess({navigation, route}) {
         {loading ? (
           <ActivityIndicator color={'white'} />
         ) : (
-          <Text style={{fontSize: 12, color: 'white'}}>Yes Cancel</Text>
+          <Text style={{ fontSize: 12, color: 'white' }}>Yes Cancel</Text>
         )}
       </TouchableOpacity>
     );
@@ -62,15 +71,15 @@ export default function OrderSuccess({navigation, route}) {
   const CountDown = () => {
     const [timeLeft, setTimeLeft] = useState(120);
     useEffect(() => {
-      if (timeLeft > 0) {
-        const timerId = setInterval(() => {
-          setTimeLeft(timeLeft => timeLeft - 1);
-        }, 1000);
+      // if (timeLeft > 0) {
+      //   const timerId = setInterval(() => {
+      //     setTimeLeft(timeLeft => timeLeft - 1);
+      //   }, 1000);
 
-        return () => clearInterval(timerId); // Cleanup the interval on component unmount
-      }else{
-        navigation.navigate('Account')
-      }
+      //   return () => clearInterval(timerId); // Cleanup the interval on component unmount
+      // }else{
+      //   navigation.navigate('Account')
+      // }
     }, [timeLeft]);
 
     const formatTime = (seconds) => {
@@ -88,7 +97,7 @@ export default function OrderSuccess({navigation, route}) {
           marginBottom: 45,
         }}>
         <View>
-          <Text style={{fontSize: 14, fontFamily: 'Poppins', color: 'black'}}>
+          <Text style={{ fontSize: 14, fontFamily: 'Poppins', color: 'black' }}>
             Ordered by mistake?
           </Text>
           <Text
@@ -103,10 +112,10 @@ export default function OrderSuccess({navigation, route}) {
         </View>
         <TouchableOpacity
           onPress={() => {
-           if(timeLeft>0){
-            setModalVisible(true);
-           }
-          
+            if (timeLeft > 0) {
+              setModalVisible(true);
+            }
+
           }}
           style={{
             height: 40,
@@ -131,7 +140,7 @@ export default function OrderSuccess({navigation, route}) {
     );
   };
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <Modal
         animationType="slide"
         transparent={true}
@@ -197,7 +206,7 @@ export default function OrderSuccess({navigation, route}) {
                   borderRadius: 30,
                   alignItems: 'center',
                 }}>
-                <Text style={{fontSize: 12, color: 'black'}}>Don't Cancel</Text>
+                <Text style={{ fontSize: 12, color: 'black' }}>Don't Cancel</Text>
               </TouchableOpacity>
 
               <CancelOrderButton />
@@ -221,7 +230,7 @@ export default function OrderSuccess({navigation, route}) {
           }}
         />
       </TouchableOpacity>
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Image
           source={successImage}
           style={{
@@ -233,7 +242,7 @@ export default function OrderSuccess({navigation, route}) {
             resizeMode: 'contain',
           }}
         />
-        <Text style={{fontFamily: 'Poppins', fontSize: 16, color: 'black'}}>
+        <Text style={{ fontFamily: 'Poppins', fontSize: 16, color: 'black' }}>
           Order Placed Successfully
         </Text>
         <Text

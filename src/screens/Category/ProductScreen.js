@@ -86,7 +86,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const [isBag, setIsBag] = useState(false);
   const [isFav, setIsFav] = useState(false);
   const [productDetail, setProductDetail] = useState(null);
-  const [feature, setFeature] = useState();
+  const [feature, setFeature] = useState([]);
   const [subCategoryData, setSubCategoryData] = useState([]);
   const [page, setPage] = useState(1);
   const [curr, setCurr] = useState(null)
@@ -98,7 +98,12 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const [currentLocation, setCurrentLocation] = useState();
   const [addListModal, setAddListModal] = useState(false);
   const [addressChange, setaddressChange] = useState('false')
-  const [roadDistance, setRoadDistance] = useState('')
+  const [roadDistance, setRoadDistance] = useState('');
+  const [productIds, setProductIds] = React.useState({
+    catId: '',
+    subCatId: '',
+    subSubCatId: ''
+  });
 
   useFocusEffect(
     useCallback(async () => {
@@ -106,6 +111,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       await getUserAddress();
       await _getUserCurrentLocation();
       await getProductDetail();
+      setIsBag(false);
     }, []),
   );
 
@@ -125,15 +131,27 @@ const ProductScreen = ({ navigation, route: { params } }) => {
 
   const getProductDetail = async () => {
     const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
+    // params?.wishlist ? params?.item?.product_id : params?.item?.id,->params?.tenantMetadata?.product_id
+    let productID = (params?.wishlist ? params?.item?.product_id : params?.item?.id) || params?.item?.tenantMetadata?.product_id;
+    console.log("Product ID =>> " + productID);
     const response = await axios.get(
-      `${BASE_URL}/product-detail/${params?.wishlist ? params?.item?.product_id : params?.item?.id}?user_id=${id}&device_id=${global.deviceId}`,
+      `${BASE_URL}/product-detail/${productID}?user_id=${id}&device_id=${global.deviceId}`,
     );
+
+    console.log("Here is the Response of Product Details -> " + JSON.stringify(response?.data));
     setProductDetail(response.data);
     getRoadDistance(response.data);
-    setIsFav(response.data?.is_wishlist)
-    setIsBag(response.data?.is_bag)
-    setFeature(JSON.parse(response.data.product?.feature));
-
+    setIsFav(response.data?.is_wishlist);
+    // setIsBag(response.data?.is_bag);
+    console.log("This is the response of data ==> " + response.data?.is_wishlist);
+    let tempArray = response?.data?.product?.feature;
+    console.log("Length => " + tempArray.length);
+    setProductIds({
+      catId: response.data?.product?.cat_id,
+      subCatId: response.data?.product?.subcat_id,
+      subSubCatId: response.data?.product?.subsubcat_id
+    });
+    setFeature(tempArray);
   };
 
   const handleLoadMore = () => {
@@ -149,21 +167,27 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const getSimilarProd = async pageNum => {
     if (isLoading || !hasMoreData) return;
     setIsLoading(true);
+    console.log("params data is here => " + JSON.stringify(params.item));
 
     const body = {
-      page: pageNum,
+      page: pageNum - 1,
+      cat_id: productIds.catId,
+      subcat_id: productIds.subCatId,
+      subsubcat_id: productIds.subSubCatId,
+      seller_id: params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id,
       // ...(params.item.tags && {tags: params.item.tags}),
-      ...(params.item.cat_id && { cat_id: params.item.cat_id }),
-      ...(params.item.subcat_id !== null && { subcat_id: params.item.subcat_id }),
-      ...(params.item.subsubcat_id !== null && {
-        subsubcat_id: params.item.subsubcat_id,
-      }),
+      // ...(params.item.cat_id && { cat_id: params.item.cat_id }),
+      // ...(params.item.subcat_id !== null && { subcat_id: params.item.subcat_id }),
+      // ...(params.item.subsubcat_id !== null && { subsubcat_id: params.item.subsubcat_id }),
       // ...(params.item.brandname !== null && { brandname: params.item.brandname }),
     };
+    console.log("Here is the Body! bla bla=>> " + JSON.stringify(body));
     const response = await axios.post(
-      `${BASE_URL}/product-list?seller_id=${global.sellerId}`,
+      `${BASE_URL}/product-list`,
       body,
     );
+    console.log("Here is the response => " + JSON.stringify(response));
+    console.log("Here is the response  afdsfasg => " + global.sellerId);
     if (response.status === 200) {
       setImageBase(global.imageThumbPath);
       if (response.data.product.data.length > 0) {
@@ -178,69 +202,6 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     setIsLoading(false);
   };
 
-  // const getWishListData = async () => {
-  //   const savedToken = await AsyncStorage.getItem('token');
-  //   const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
-  //   if (savedToken) {
-  //     const headers = {
-  //       Authorization: `Bearer ${savedToken}`,
-  //     };
-  //     const body = {
-  //       user_id: id,
-  //       device_id: global.deviceId,
-  //     };
-  //     const response = await axios.post(`${BASE_URL}/wish-list`, body, {
-  //       headers,
-  //     });
-  //     if (response.data.status_code == 200) {
-  //       setWishListData(response.data.data);
-  //       const filteredData = response.data.data.filter(
-  //         item => item.product_id == params?.item?.id,
-  //       );
-  //       setFilterData(filteredData[0]);
-  //       if (filteredData?.length > 0) {
-  //         setIsFav(true);
-  //       }
-  //     }
-  //   } else {
-  //     return;
-  //   }
-  // };
-  // const getCartData = async () => {
-  //   const savedToken = await AsyncStorage.getItem('token');
-  //   const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
-  //   if (savedToken) {
-  //     const headers = {
-  //       Authorization: `Bearer ${savedToken}`,
-  //     };
-  //     const body = {
-  //       user_id: id,
-  //       device_id: global.deviceId,
-  //     };
-  //     // console.log(body,'83weiru928743woer')
-  //     const response = await axios.post(`${BASE_URL}/cart-list`, body, {
-  //       headers,
-  //     });
-  //     console.log(response.data, 'getCartData');
-  //     if (response.data.status_code == 200) {
-  //       // setWishListData(response.data.data)
-  //       const filteredData = response.data.data.filter(
-  //         item => item?.product_id == params?.item?.id,
-  //       );
-
-  //       console.log(filteredData, 'filteredDatafilteredDatafilteredData');
-  //       setFilterCartData(filteredData);
-  //       console.log(filteredData, 'fil987987redCart', response.data.data);
-  //       // if (filteredData?.length > 0) {
-  //       //   setIsFav(true)
-  //       // }
-  //     } else {
-  //     }
-  //   } else {
-  //     return;
-  //   }
-  // };
-
   const updateWishList = async () => {
     const savedToken = await AsyncStorage.getItem('token');
     const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
@@ -250,11 +211,11 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       };
       const body = {
         ...(isFav && { id: productDetail?.wishlist_id > 0 && productDetail?.wishlist_id }),
-        ...(!isFav && { product_id: params.item?.id }),
+        ...(!isFav && { product_id: params.item?.tenantMetadata?.product_id ? params.item?.tenantMetadata?.product_id : params.item?.id }),
         user_id: id,
         device_id: global.deviceId,
       };
-      // console.log(body,'body');
+      console.log("Wishlist ID ==> " + JSON.stringify(body));
       const response = await axios.post(
         `${BASE_URL}/add-remove-wish-list`,
         body,
@@ -297,11 +258,22 @@ const ProductScreen = ({ navigation, route: { params } }) => {
               Authorization: `Bearer ${savedToken}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             };
+            var imagePath = ``;
+            if (params.searchItem === true) {
+              const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
+              imagePath = `${global.imageThumbPath}/${imageEndURL}`
+            } else {
+              imagePath = `${global.imageThumbPath}${params?.item?.seller_id}/${params?.item?.image}`
+            }
+            console.log("This is the image going to the backend  => " + imagePath);
+            // const sellerID = params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id;
+            // const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
+            // ${imageBase}/${params?.item?.seller_id}/${params?.item?.image}
             const body = {
               user_id: id,
               device_id: global.deviceId,
-              product_id: params?.item?.id,
-              product_image: `${imageBase}/${params?.item?.seller_id}/${params?.item?.image}`,
+              product_id: params?.item?.tenantMetadata?.product_id ? params?.item?.tenantMetadata?.product_id : params?.item?.id,
+              product_image: imagePath,
               qty: 1,
               options: {
                 Color: 'Black',
@@ -312,8 +284,9 @@ const ProductScreen = ({ navigation, route: { params } }) => {
               },
               distance: 25,
               shipping_charge: 10,
+              delivery_time: roadDistance
             };
-            // console.log(body, 'bodyAddCart');
+            console.log('bodyAddCart ==>> ', body);
             const response = await axios.post(`${BASE_URL}/add-in-cart`, body, {
               headers,
             });
@@ -336,11 +309,6 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     }
   };
 
-  // const renderItem2 = ({ item }) => (
-  //   <ImageBackground source={{ uri: `${productDetail.images_url}/${productDetail.product.seller_id}/${item.image}` }} style={styles.carouselItem}>
-  //   </ImageBackground>
-  // );
-  //
   const renderSubCategory = ({ item }) => (
     <TouchableOpacity
       onPress={() => navigation.push('ProductScreen', { item: item })}
@@ -453,41 +421,42 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     );
   };
 
-  // const _renderContent = () => {
-  //   const renderDetails = ({ item }) => {
-  //     return (
-  //       <View style={{ backgroundColor: '#F3F3F6', padding: 10 }}>
-  //         <Text
-  //           style={{
-  //             fontSize: 12,
-  //             fontWeight: '600',
-  //             fontFamily: 'Poppins',
-  //             color: '#111111',
-  //           }}>
-  //           {Object.keys(item) == 'vendorArticleNumber'
-  //             ? 'Vendor Article Number'
-  //             : 'Vendor Article Name'}
-  //         </Text>
-  //         <Text
-  //           style={{
-  //             fontSize: 12,
-  //             fontWeight: '400',
-  //             fontFamily: 'Poppins',
-  //             color: '#111111',
-  //           }}>
-  //           {Object.values(item)}
-  //         </Text>
-  //       </View>
-  //     );
-  //   };
-  //   return (
-  //     <View>
-  //       <FlatList data={feature} renderItem={renderDetails} />
-  //     </View>
-  //   );
-  // };
+  const _renderContent = () => {
+    const renderDetails = ({ item }) => {
+      return (
+        <View style={{ backgroundColor: '#F3F3F6', padding: 10 }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '600',
+              fontFamily: 'Poppins',
+              color: '#111111',
+            }}>
+            {Object.keys(item) == 'vendorArticleNumber'
+              ? 'Vendor Article Number'
+              : 'Vendor Article Name'}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '400',
+              fontFamily: 'Poppins',
+              color: '#111111',
+            }}>
+            {Object.values(item)}
+          </Text>
+        </View>
+      );
+    };
+    return (
+      <View>
+        <FlatList data={feature} renderItem={renderDetails} />
+      </View>
+    );
+  };
 
   const _updateSections = activeSections => {
+    console.log(activeSections);
     setActiveSections(activeSections);
   };
 
@@ -562,12 +531,12 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       const distanceValue = response.data.rows[0].elements[0].distance.value; // distance in meters
       const distanceKm = distanceValue / 1000;
       console.log('-=-distanceValue-=-', distanceValue);
-      
+
 
       let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
 
-      if (distanceKm > 15) {
-        const extraDistance = distanceKm - 15;
+      if (distanceKm > 20) {
+        const extraDistance = distanceKm - 20;
         const additionalTime = extraDistance * 8; // 8 minutes per km over 15 km
         travelTimeMinutes += additionalTime;
       }
@@ -586,18 +555,34 @@ const ProductScreen = ({ navigation, route: { params } }) => {
         // Alert.alert('with in time')
         setRoadDistance(`Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`)
       } else {
+        // setRoadDistance(`Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`)
         // Alert.alert('after close warehouse')
-        const tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
+        // Get the current hour
+        const currentHour = moment().hour();
+        // Check if the current time is between 12 AM and 6 AM
+        let tomorrow;
+        if (currentHour >= 0 && currentHour < 6) {
+          // If current time is between 12 AM and 6 AM, don't add a day
+          tomorrow = moment().format('DD MMM, YYYY');
+        } else {
+          // If current time is outside 12 AM to 6 AM, add a day
+          tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
+        }
+        // const tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
+
         const time = moment(productDetail?.product?.workinng_start_time, 'HH:mm:ss');
         time.add(travelTimeMinutes, 'minutes');
         const newTime = time.format('HH:mm A');
-        setRoadDistance(`Delivery by ${tomorrow} at ${newTime}, ${distanceKm.toFixed(0)} km`)
+        // , ${distanceKm.toFixed(0)} km
+        setRoadDistance(`Delivery by ${tomorrow} at ${newTime}`);
       }
     } catch (error) {
       console.error('Error fetching distance:', error);
       return null;
     }
   }
+
+  console.log("productDetail?.size_chart", productDetail?.size_chart);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -689,7 +674,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
                       Select Size
                     </Text>
                     <TouchableOpacity
-                      onPress={() => setSizeModal(true)}
+                      onPress={() => setSizeModal(productDetail?.size_chart ? true : false)}
                       style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Image
                         style={{ height: 20, width: 20, marginRight: 5 }}
@@ -804,34 +789,6 @@ const ProductScreen = ({ navigation, route: { params } }) => {
                           fontFamily: 'Poppins',
                           color: '#64646D',
                         }}>{roadDistance}
-                        {/* {getDistanceFromLatLonInKm(
-                          {
-                            latitude: currentLocation?.Latitude,
-                            longitude: currentLocation?.Longitude,
-                          },
-                          {
-                            latitude: productDetail?.product?.Latitude,
-                            longitude: productDetail?.product?.Longitude,
-                          },
-                          {
-                            startTime:
-                              productDetail?.product?.workinng_start_time,
-                            endTime: productDetail?.product?.workinng_end_time,
-                          },
-                        )} */}
-                        {/* {calculateRoadDistane({
-                          latitude: currentLocation?.Latitude,
-                          longitude: currentLocation?.Longitude,
-                        },
-                          {
-                            latitude: productDetail?.product?.Latitude,
-                            longitude: productDetail?.product?.Longitude,
-                          },
-                          {
-                            startTime:
-                              productDetail?.product?.workinng_start_time,
-                            endTime: productDetail?.product?.workinng_end_time,
-                          })} */}
                       </Text>
                     </View>
                   </View>
@@ -867,7 +824,8 @@ const ProductScreen = ({ navigation, route: { params } }) => {
                       }}>
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: 16,
+                          fontWeight: "900",
                           fontFamily: 'Poppins-Medium',
                           color: '#333',
                         }}>
@@ -875,15 +833,44 @@ const ProductScreen = ({ navigation, route: { params } }) => {
                       </Text>
                     </View>
                   </View>
-                  <FlatList data={feature} renderItem={renderDetails} />
-                  {/* <Accordion
-                    sections={SECTIONS}
-                    activeSections={activeSections}
-                    renderHeader={_renderHeader}
-                    renderContent={_renderContent}
-                    onChange={_updateSections}
-                    underlayColor="transparent" // Ensure underlay color is transparent
-                  /> */}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", backgroundColor: '#F3F3F6', justifyContent: "flex-start" }}>
+                    {
+                      feature?.map((item, index) => (
+                        <View
+                          key={index}
+                          style={{
+                            width: "43%", // Adjust the width for grid-like view (3 columns per row)
+                            height: 50,
+                            backgroundColor: '#F3F3F6',
+                            margin: 5, // Add margin for spacing
+                            padding: 7
+                          }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "bold",
+                              fontFamily: 'Poppins-Bold',
+                              color: '#111111',
+                              marginBottom: 5, textAlign: "left"
+                            }}>
+                            {Object.keys(item)[0] === 'vendorArticleNumber'
+                              ? 'VENDOR ARTICLE NUMBER'
+                              : Object.keys(item)[0].toUpperCase()}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: '400',
+                              fontFamily: 'Poppins-Medium',
+                              color: '#111111',
+                              textAlign: "left"
+                            }}>
+                            {Object.values(item)[0] ? Object.values(item)[0].length > 15 ? Object.values(item)[0].substring(0, 15) + '...' : Object.values(item)[0] : null}
+                          </Text>
+                        </View>
+                      ))
+                    }
+                  </View>
                   <Text
                     style={{
                       fontSize: 14,
@@ -954,13 +941,17 @@ const ProductScreen = ({ navigation, route: { params } }) => {
         }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text
-              onPress={() => setSizeModal(false)}
-              style={{ alignSelf: 'flex-end' }}>
-              X
-            </Text>
+            <TouchableOpacity onPress={() => setSizeModal(false)} style={{ borderWidth: 0, alignSelf: "flex-end" }}>
+              <View style={{ height: 35, width: 35, borderRadius: 25, borderWidth: 1.5, borderColor: "black", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ fontWeight: "bold" }}>
+                  X
+                </Text>
+              </View>
+            </TouchableOpacity>
             <Image
-              style={{ height: 100, width: '100%' }}
+              style={{ height: 220, width: "100%" }}
+              resizeMode='center'
+              resizeMethod='scale'
               source={{ uri: productDetail?.size_chart }}
             />
           </View>
@@ -1099,8 +1090,8 @@ const styles = StyleSheet.create({
   modalContainer: {
     backgroundColor: '#FFFFFF',
     padding: 16,
-    maxHeight: responsiveWidth(400),
-    minHeight: responsiveWidth(180),
+    maxHeight: responsiveWidth(600),
+    minHeight: responsiveWidth(290),
     // paddingBottom: 5,
     alignItems: 'center',
   },

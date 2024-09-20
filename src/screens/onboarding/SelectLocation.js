@@ -14,14 +14,14 @@ import LinearGradient from 'react-native-linear-gradient';
 import ButtonComp from '../../components/ButtonComp';
 import Geolocation from 'react-native-geolocation-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Google_Api_Key} from '../../config';
+import { Google_Api_Key } from '../../config';
 import axios from 'axios';
-import {BASE_URL} from '../../config';
-import {haversineDistance} from '../../helpers/phoneValidator';
+import { BASE_URL } from '../../config';
+import { haversineDistance } from '../../helpers/phoneValidator';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-const SelectLocation = ({navigation}) => {
+const SelectLocation = ({ navigation }) => {
   const requestLocationPermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
@@ -72,7 +72,7 @@ const SelectLocation = ({navigation}) => {
             }
           });
 
-          return {address, city, state, postalCode};
+          return { address, city, state, postalCode };
         }
       } else {
         console.error(
@@ -91,6 +91,7 @@ const SelectLocation = ({navigation}) => {
     const response = await axios.get(`${BASE_URL}/general-setting`);
     const sellerData = response?.data?.data?.supplier;
     const sellerDistance = response?.data?.data?.distance_km;
+    navigation.navigate('Login');
     Geolocation.getCurrentPosition(
       async position => {
         let sellerNearMe = [];
@@ -118,18 +119,17 @@ const SelectLocation = ({navigation}) => {
 
         getLocationDetails(latitude, longitude).then(async locationDetails => {
           if (locationDetails) {
-            await AsyncStorage.setItem('@login', 'true');
+            // await AsyncStorage.setItem('@login', 'true');
             locationDetails.Latitude = latitude;
             locationDetails.Longitude = longitude;
             locationDetails.zipcode = locationDetails.postalCode;
             locationDetails.sellerId = ids;
-            global.sellerId = ids 
+            global.sellerId = ids
             await AsyncStorage.setItem(
               'userCurrentLocation',
               JSON.stringify(locationDetails),
             );
-            navigation.navigate('Login');
-
+            console.log("Background, Task Completed");
           }
         });
       },
@@ -175,7 +175,7 @@ const SelectLocation = ({navigation}) => {
         </View>
       </View>
       <Text style={styles.title}>Where should we deliver?</Text>
-      <Text style={[styles.title, {marginBottom: 30}]}>
+      <Text style={[styles.title, { marginBottom: 30 }]}>
         Your styles will arrive within 2 hours!
       </Text>
       <ButtonComp
@@ -191,7 +191,7 @@ const SelectLocation = ({navigation}) => {
         bdrColor={'#000000'}
         color={'white'}
         txtColor={'#111111'}
-        onPress={async() => {await AsyncStorage.setItem('fromScreen','login');navigation.navigate('SearchLocation')}}
+        onPress={async () => { await AsyncStorage.setItem('fromScreen', 'login'); navigation.navigate('SearchLocation') }}
       />
     </SafeAreaView>
   );

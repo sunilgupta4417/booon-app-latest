@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Modal
 } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import CustomHeader from '../../components/CustomHeader';
@@ -19,13 +20,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL } from '../../config';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-
 const width = Dimensions.get('window').width;
+import { WebView } from 'react-native-webview';
+
 const Account = ({ navigation }) => {
   const dispatch = useDispatch();
   const [userDetail, setUserDetail] = useState({});
   const [orderData, setOrderData] = useState([]);
   const [token, setToken] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [tackingURL, setTrackingURL] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -43,12 +47,22 @@ const Account = ({ navigation }) => {
     }, []),
   );
 
+  const enableTrackModal = (url) => {
+    setTrackingURL(url);
+    setModalVisible(true);
+  }
+
   const getOrders = async () => {
     const savedToken = await AsyncStorage.getItem('token');
     const data = JSON.parse(await AsyncStorage.getItem('userData'));
     const headers = {
       Authorization: `Bearer ${savedToken}`,
     };
+    console.log("Body Data => " + JSON.stringify({
+      user_id: data?.id,
+      device_id: global.deviceId,
+      order_type: 'new_order'
+    }));
     const response = await axios.post(
       `${BASE_URL}/order-list`,
       {
@@ -62,7 +76,6 @@ const Account = ({ navigation }) => {
     );
     if (response.status == 200) {
       console.log('-=-=', response?.data);
-
       setOrderData(response.data);
     }
   };
@@ -73,6 +86,7 @@ const Account = ({ navigation }) => {
     await AsyncStorage.removeItem('userData');
     await AsyncStorage.removeItem('userCurrentLocation');
     await AsyncStorage.removeItem('addressChange');
+    await AsyncStorage.removeItem('@login');
     dispatch({ type: 'SET_ADDRESS_LIST', payload: [] });
     setToken(null);
     navigation.navigate('GetStarted');
@@ -89,9 +103,9 @@ const Account = ({ navigation }) => {
         style={{ width: responsiveWidth(89), height: responsiveWidth(118) }}
         source={{ uri: item?.product_image }}
       />
-      <View style={{ paddingLeft: 10, flexGrow: 1}}>
+      <View style={{ paddingLeft: 10, flexGrow: 1 }}>
         <Text style={styles.nameTxt} numberOfLines={1}>
-          {item?.product_name}
+          {item?.product_name && item.product_name.length > 20 ? item.product_name.substring(0, 20) + "..." : item?.product_name}
         </Text>
         <Text style={[styles.mobileTxt, { fontWeight: '400' }]}>
           {item?.subtitle}
@@ -118,7 +132,9 @@ const Account = ({ navigation }) => {
           <Text style={{ color: '#5EB160' }}> 40% OFF</Text>
         </Text>
         {item?.customer_tracking_url &&
-          <TouchableOpacity style={{ alignSelf: 'flex-end', paddingHorizontal: 20, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 10 }}><Text style={{ color: '#fff' }}>Track Order</Text></TouchableOpacity>}
+          <TouchableOpacity style={{ alignSelf: 'flex-end', paddingHorizontal: 20, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 10 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
+            <Text style={{ color: '#fff' }}>Track Order</Text>
+          </TouchableOpacity>}
       </View>
     </View>
   );
@@ -152,7 +168,6 @@ const Account = ({ navigation }) => {
           renderItem={renderLiveOrderItem}
           ListHeaderComponent={() => (
             <>
-
               {userDetail?.fname && userDetail?.mobile && userDetail?.emailid ? (
                 <>
                   <Text style={styles.liveOrderTxt}>Live Orders</Text>
@@ -186,6 +201,10 @@ const Account = ({ navigation }) => {
                 ]}>
                 
               </View> */}
+              <NavBtn
+                onPress={() => navigation.navigate('PastOrder')}
+                title="Past Orders"
+              />
               {token && (
                 <NavBtn
                   title="Addresses"
@@ -202,7 +221,7 @@ const Account = ({ navigation }) => {
                 }
                 title="Shipping & Return Policy"
               />
-              <NavBtn
+              <NavBtn 
                 onPress={() => navigation.navigate('WebViewComp', 'm-privacy-policy')}
                 title="Privacy Policy"
               />
@@ -236,7 +255,67 @@ const Account = ({ navigation }) => {
           style={{ height: 10, width: 6 }}
           source={require('../../assets/Category/rightarr.png')}
         />
-      </TouchableOpacity> */}
+      </TouchableOpacity> */}{/* Modal */}
+      {/* Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <View
+            style={{
+              flex: 0.8,
+              backgroundColor: 'white',
+              margin: 20,
+              borderRadius: 10,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: 10,
+                borderBottomWidth: 2,
+                borderColor: 'black', // Rough border color
+                borderStyle: 'dashed', // Rough border style
+                backgroundColor: '#f8f8f8',
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Order Tracking</Text>
+              {/* 'X' Close Button */}
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={{
+                  padding: 5,
+                  borderColor: 'black',
+                  borderWidth: 2,
+                  borderStyle: 'dashed',
+                  borderRadius: 5,
+                }}
+              >
+                <Text style={{ fontSize: 20, fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* WebView to show the URL content */}
+            <WebView
+              source={{ uri: tackingURL }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+      </Modal>
 
     </SafeAreaView>
   );

@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useRef } from 'react';
 import {
   FlatList,
   Image,
@@ -11,17 +12,25 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  Dimensions
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
 import CustomHeader from '../../components/CustomHeader';
 import { responsiveWidth } from '../../utils';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import FilterScreen from './FilterScreen';
+import FilterModal from 'react-native-modal';
+import { useDispatch } from 'react-redux';
 import CheckBox from '@react-native-community/checkbox';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+const width = Dimensions.get('window').width;
 
 const SubCategory = ({ navigation, route: { params } }) => {
+  const dispatch = useDispatch();
+  const filterSort = useRef({});
+  const [filterTypeRef, setfilterTypeRef] = useState('discount');
   const [subSubCatData, setSubSubCatData] = useState([]);
   const [imageBase, setImageBase] = useState('');
   const [subCategoryData, setSubCategoryData] = useState([]);
@@ -37,7 +46,18 @@ const SubCategory = ({ navigation, route: { params } }) => {
   const [sortBy, setSortBy] = useState(null);
   const [gender, setGender] = useState(null);
   const [filterData, setFilterData] = useState(null);
-  const [noData, setnoData] = useState('')
+  const [noData, setnoData] = useState('');
+  const [AppliedFilter, setAppliedFilter] = useState({});
+  const [subcategory, setSubCategory] = useState([]);
+  const subCategoryId = useRef(params.subsubcat_id);
+  const [filterObjToData, setfilterObjToData] = useState(null);
+  const sortFiterlist = [
+    { lable: 'Newest First', value: 'new' },
+    { lable: 'Popularity', value: 'popular' },
+    { lable: 'Price - High to Low', value: 'high_to_low' },
+    { lable: 'Price - Low to High', value: 'low_to_high' }
+  ];
+
 
   useEffect(() => {
     setSubSubCatData(params.subsubCatData);
@@ -51,8 +71,11 @@ const SubCategory = ({ navigation, route: { params } }) => {
   }, []);
 
   useEffect(() => {
-    resetAndFetchProducts();
-  }, [gender, sortBy]);
+    const getAllLists = async () => {
+      await getFilter();
+    }
+    getAllLists();
+  }, []);
 
   const handleLoadMore = () => {
     if (!isLoading && hasMoreData) {
@@ -67,12 +90,13 @@ const SubCategory = ({ navigation, route: { params } }) => {
   const getProductList = async (pageNum, no_of_item = 10) => {
     // if (isLoading || !hasMoreData) return;
     setIsLoading(true);
+    console.log("Call Product List => " + filterSort.current.gender);
     const tagsString = tagsData.join(',');
     const body = {
       page: pageNum,
       ...(params.subsubCatData && { tags: tagsString }),
       ...(params.cat_id && { cat_id: params.cat_id }),
-      ...(gender !== null && { gender: gender }),
+      ...(gender !== null || filterSort.current.gender !== null && { gender: filterSort.current.gender !== null ? filterSort.current.gender : gender }),
       ...(sortBy !== null && { short: sortBy }),
       seller_id: global.sellerId
     };
@@ -83,7 +107,9 @@ const SubCategory = ({ navigation, route: { params } }) => {
       `${BASE_URL}/product-list`,
       body,
     );
+    console.log("Body of Product == > " + JSON.stringify(body));
     if (response.status == 200) {
+      console.log("Response of Product List !! ")
       setIsLoading(false);
       setImageBase(global.imageThumbPath)
       if (pageNum === 1) {
@@ -199,6 +225,71 @@ const SubCategory = ({ navigation, route: { params } }) => {
     );
   };
 
+  const renderHeaderCat = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => {
+        subCategoryId.current = item?.cat_id;
+        let category = { subsubcat_id: [item?.cat_id] }
+        closeFilterApply({ ...AppliedFilter, ...category })
+      }}
+      style={{
+        alignItems: 'center',
+        width: 80,
+        borderWidth: 0,
+        paddingBottom: 10,
+      }}>
+      <Image
+        style={{
+          height: 64,
+          width: 64,
+          borderRadius: 37,
+          margin: 5, // Adjusted margin for spacing
+        }}
+        source={{ uri: item.image }}
+      />
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: 12, // Smaller text to fit in reduced height
+          fontWeight: '400',
+          lineHeight: 18,
+          fontFamily: 'Poppins',
+          color: '#212121',
+        }}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const getFilter = async () => {
+    let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
+    if (params?.cat_id) {
+      url = url + `&cat_id=${params.cat_id}`;
+    }
+
+    if (params?.subcat_id) {
+      url = url + `&subcat_id=${params.subcat_id}`;
+    }
+
+    if (subCategoryId.current) {
+      url = url + `&subsubcat_id=${subCategoryId.current}`;
+    }
+
+    if (filterSort.current.gender) {
+      url = url + `&gender=${filterSort.current.gender}`;
+    }
+
+    console.log('-=-=-url-=-=url-=-=-', url);
+
+    const res = await axios.get(url);
+    console.log("Here is the Res Data => " + JSON.stringify(res));
+    if (res?.data) {
+      setFilterData(res?.data);
+    }
+    let filterObjToData = Object.keys(res?.data);
+    setfilterObjToData(filterObjToData)
+  };
+
   const FilterComp = ({ name, onPress }) => (
     <TouchableOpacity
       onPress={onPress}
@@ -211,6 +302,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
           alignItems: 'center',
           paddingHorizontal: 8,
           padding: 4,
+          marginLeft: 10,
         },
       ]}>
       <Text style={styles.filterName}>{name}</Text>
@@ -220,6 +312,154 @@ const SubCategory = ({ navigation, route: { params } }) => {
       />
     </TouchableOpacity>
   );
+
+  const toggleSize = size => {
+    if (selectedSizes.includes(size)) {
+      setSelectedSizes(selectedSizes.filter(s => s !== size));
+    } else {
+      setSelectedSizes([...selectedSizes, size]);
+    }
+  };
+
+  const FilterListing = () => {
+    return (
+      <>
+        {filterObjToData && filterObjToData.length > 0 && filterObjToData.map(item => {
+          if (item == 'discount') {
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => {
+                  setfilterTypeRef('discount');
+                  setFilterModal(true);
+                }}
+                style={[
+                  styles.row,
+                  {
+                    borderWidth: 1,
+                    borderColor: '#DEDEE0',
+                    borderRadius: 20,
+                    alignItems: 'center',
+                    paddingHorizontal: 8,
+                    padding: 4,
+                  },
+                ]}>
+                <Text style={styles.filterName}>{'Filter'}</Text>
+                <Image
+                  style={{ height: 22, width: 22, margin: 2 }}
+                  source={require('../../assets/filter.png')}
+                />
+              </TouchableOpacity>
+            );
+          }
+        })}
+        <FilterComp
+          name={'Sort by'}
+          onPress={() => {
+            setfilterTypeRef('sort');
+            setSortModal(true);
+          }}
+        />
+        {filterObjToData && filterObjToData.length > 0 && filterObjToData.map(item => {
+          if (item == 'gender') {
+            return (
+              <FilterComp
+                key={item}
+                name={'Gender'}
+                onPress={() => {
+                  setfilterTypeRef('gender');
+                  setGenderModal(true);
+                }}
+              />
+            );
+          }
+          if (item == 'size') {
+            return (
+              <FilterComp
+                key={item}
+                name={'Size'}
+                onPress={() => {
+                  setfilterTypeRef('size');
+                  setSizeModal(true);
+                }}
+              />
+            );
+          }
+        })}
+      </>
+    );
+  };
+
+  const _handleGenderFilter = async (genderVAl) => {
+
+    let genders = { gender: genderVAl }
+    setGenderModal(false)
+    closeFilterApply({ ...AppliedFilter, ...genders })
+  }
+
+  const _handleSizeFIlter = () => {
+    let size = { size: selectedSizes }
+    setSizeModal(false)
+    closeFilterApply({ ...AppliedFilter, ...size })
+  }
+
+  const _handleSortBy = (sort) => {
+    setSortBy(sort);
+    let short = { short: sort }
+    setSortModal(false)
+    closeFilterApply({ ...AppliedFilter, ...short })
+  }
+
+  const closeFilterApply = async (value) => {
+    if (Object.keys(value).length > 0) {
+      setAppliedFilter(value)
+      let filterValue = {};
+      if (value?.brandname?.length) {
+        filterValue.brandname = value.brandname.join(',');
+      }
+
+      if (value?.color?.length) {
+        filterValue.color = value.color.join(',')
+      }
+
+      if (value?.subsubcat_id?.length) {
+        filterValue.subsubcat_id = value.subsubcat_id.join(',');
+      }
+
+      if (value?.gender && value?.gender !== '') {
+        filterValue.gender = value.gender;
+      }
+
+      if (value?.short && value?.short !== '') {
+        filterValue.short = value.short;
+      }
+
+      if (value?.size?.length) {
+        setSelectedSizes(value?.size)
+        filterValue.size = value.size.join(',');
+      }
+
+      if (value?.discount_value && (value?.discount_value !== '' || value?.discount_value !== undefined)) {
+        filterValue.discount_value = value?.discount_value;
+      }
+
+      if (value?.price && value?.price !== '') {
+        filterValue.price = value?.price;
+      }
+      console.log("Set the value of filterSort!");
+      filterSort.current = filterValue;
+      getProductList(1);
+      setFilterModal(false);
+      await getFilter();
+    } else {
+      console.log("I'm in the Else!");
+      filterSort.current = {};
+      getProductList(1);
+      setFilterModal(false);
+      await getFilter();
+    }
+  }
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -239,11 +479,22 @@ const SubCategory = ({ navigation, route: { params } }) => {
                   renderItem={renderSubSubCategory}
                   horizontal
                   style={{ height: responsiveWidth(140) }}
-                  // 180
                   showsHorizontalScrollIndicator={false}
                 />
-                <View>
-                  <View style={[styles.row, { paddingVertical: 6, paddingBottom: 8, backgroundColor: 'white' }]}>
+                <View style={{
+                  width: width,
+                  backgroundColor: 'white',
+                }}>
+                  <View style={[
+                    {
+                      flexDirection: "row",
+                      paddingBottom: 15,
+
+                      paddingTop: 6,
+                      backgroundColor: 'white',
+                      paddingLeft: 14,
+                    },
+                  ]}>
                     <TouchableOpacity
                       onPress={() => setFilterModal(true)}
                       style={[
@@ -263,9 +514,25 @@ const SubCategory = ({ navigation, route: { params } }) => {
                         source={require('../../assets/filter.png')}
                       />
                     </TouchableOpacity>
-                    <FilterComp name={'Sort by'} onPress={() => setSortModal(true)} />
-                    <FilterComp name={'Gender'} onPress={() => setGenderModal(true)} />
-                    <FilterComp name={'Size'} onPress={() => setSizeModal(true)} />
+                    <FilterComp
+                      name={'Sort by'}
+                      onPress={() => setSortModal(true)}
+                    />
+                    <FilterComp
+                      name={'Gender'}
+                      onPress={() => {
+                        setGenderModal(true);
+                      }}
+                    />
+                    <FilterComp
+                      name={'Size'}
+                      onPress={() => {
+                        setSizeModal(true);
+                      }}
+                    />
+                    {/* <FilterComp name={'Sort by'} onPress={() => setSortModal(true)} /> */}
+                    {/* <FilterComp name={'Gender'} onPress={() => setGenderModal(true)} /> */}
+                    {/* <FilterComp name={'Size'} onPress={() => setSizeModal(true)} /> */}
                   </View>
                 </View>
               </>
@@ -276,26 +543,45 @@ const SubCategory = ({ navigation, route: { params } }) => {
               )
             }
           />
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={filterModal}
-            onRequestClose={() => {
-              setFilterModal(!filterModal);
-            }}>
-            <FilterScreen close={() => setFilterModal(false)} />
-          </Modal>
 
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={sortModal}
-            onRequestClose={() => {
+          {/* Side Filter! */}
+          <FilterModal
+            isVisible={filterModal}
+            onBackButtonPress={() => {
+              setFilterModal(!filterModal);
+            }}
+            animationIn={'slideInLeft'}
+            animationOut={'slideOutLeft'}
+            animationInTiming={500}
+            animationOutTiming={500}
+            style={{ justifyContent: "flex-start", margin: 0, }}
+          >
+            <View style={{ backgroundColor: '#fff', height: '100%', width: '100%', margin: 0, padding: 0, }}>
+              <FilterScreen
+                initialFilter={filterTypeRef}
+                data={filterData}
+                appliedFilter={AppliedFilter}
+                onOnlyClose={() => {
+                  setFilterModal(false);
+                }}
+                close={(value) => closeFilterApply(value)}
+              />
+            </View>
+          </FilterModal>
+
+          {/* Sort By Filter! */}
+          <FilterModal
+            isVisible={sortModal}
+            onBackButtonPress={() => {
               setSortModal(!sortModal);
-            }}>
-            <View style={styles.modalOverlay}>
-              <View
-                style={[styles.modalContainer, { height: responsiveWidth(280) }]}>
+            }}
+            animationIn={'slideInUp'}
+            animationOut={'slideOutDown'}
+            animationInTiming={500}
+            animationOutTiming={500}
+            style={{ justifyContent: "flex-end", margin: 0, }}>
+            <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
+              <View style={[styles.modalContainer]}>
                 <View style={styles.modalHeader}>
                   <TouchableOpacity onPress={() => setSortModal(false)}>
                     <Image
@@ -306,44 +592,39 @@ const SubCategory = ({ navigation, route: { params } }) => {
                   <Text style={styles.modalTitle}>Sort By</Text>
                 </View>
                 <View style={styles.modalOptions}>
-                  {['new', 'popular', 'high_to_low', 'low_to_high'].map(
-                    sort => (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setSortBy(sort);
-                          setSortModal(false);
-                        }}
-                        key={sort}
-                        style={styles.option}>
-                        <Text
-                          style={{
-                            marginLeft: 16,
-                            color: sortBy == sort ? '#111111' : '#64646D',
-                            fontWeight: sortBy == sort ? '600' : '400',
-                          }}>
-                          {sort}
-                        </Text>
-                      </TouchableOpacity>
-                    ),
-                  )}
+                  {sortFiterlist.map(sort => (
+                    <TouchableOpacity
+                      onPress={() => _handleSortBy(sort.value)}
+                      key={sort.value}
+                      style={styles.option}>
+                      <Text
+                        style={{
+                          marginLeft: 16,
+                          color: sortBy == sort.value ? '#111111' : '#64646D',
+                          fontWeight: sortBy == sort.value ? '600' : '400',
+                        }}>
+                        {sort.lable}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
             </View>
-          </Modal>
-
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={genderModal}
-            onRequestClose={() => {
+          </FilterModal>
+          {/* Gender Filter! */}
+          <FilterModal
+            isVisible={genderModal}
+            onBackButtonPress={() => {
               setGenderModal(!genderModal);
-            }}>
-            <View style={styles.modalOverlay}>
+            }}
+            animationIn={'slideInUp'}
+            animationOut={'slideOutDown'}
+            animationInTiming={500}
+            animationOutTiming={500}
+            style={{ justifyContent: "flex-end", margin: 0, }}>
+            <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
               <View
-                style={[
-                  styles.modalContainer,
-                  { maxHeight: responsiveWidth(250) },
-                ]}>
+                style={[styles.modalContainer]}>
                 <View style={styles.modalHeader}>
                   <TouchableOpacity onPress={() => setGenderModal(false)}>
                     <Image
@@ -356,10 +637,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
                 <View style={[styles.modalOptions, { paddingTop: 10 }]}>
                   {filterData?.gender?.map(gen => (
                     <TouchableOpacity
-                      onPress={() => {
-                        setGender(gen);
-                        setGenderModal(false);
-                      }}
+                      onPress={() => _handleGenderFilter(gen)}
                       key={gen}
                       style={styles.option}>
                       <Text
@@ -375,16 +653,19 @@ const SubCategory = ({ navigation, route: { params } }) => {
                 </View>
               </View>
             </View>
-          </Modal>
-
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={sizeModal}
-            onRequestClose={() => {
+          </FilterModal>
+          {/* Size Filter */}
+          <FilterModal
+            isVisible={sizeModal}
+            onBackButtonPress={() => {
               setSizeModal(!sizeModal);
-            }}>
-            <View style={styles.modalOverlay}>
+            }}
+            animationIn={'slideInUp'}
+            animationOut={'slideOutDown'}
+            animationInTiming={500}
+            animationOutTiming={500}
+            style={{ justifyContent: "flex-end", margin: 0, }}>
+            <View style={{ backgroundColor: '#fff', width: '100%', margin: 0, padding: 15, }}>
               <View style={styles.modalContainer}>
                 <View style={styles.modalHeader}>
                   <TouchableOpacity onPress={() => setSizeModal(false)}>
@@ -395,13 +676,16 @@ const SubCategory = ({ navigation, route: { params } }) => {
                   </TouchableOpacity>
                   <Text style={styles.modalTitle}>Size</Text>
                 </View>
-                <ScrollView style={styles.modalOptions}>
-                  {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XXL'].map(
-                    size => (
-                      <View key={size} style={styles.option}>
+                <View style={{ maxHeight: 300 }}>
+                  <FlatList
+                    data={filterData?.size}
+                    extraData={filterData?.size}
+                    numColumns={3}
+                    renderItem={({ item }) => (
+                      <View key={item.name} style={[styles.option, { width: '33%' }]}>
                         <CheckBox
-                          value={selectedSizes.includes(size)}
-                          onValueChange={() => toggleSize(size)}
+                          value={selectedSizes.includes(item.name)}
+                          onValueChange={() => toggleSize(item.name)}
                           boxType="square"
                           onAnimationType="fade"
                           offAnimationType="fade"
@@ -414,15 +698,15 @@ const SubCategory = ({ navigation, route: { params } }) => {
                             marginLeft: 16,
                             color: '#64646D',
                             fontSize: 14,
-                            fontWeight: '400',
-                            fontFamily: 'Poppins',
+                            // fontWeight: '400',
+                            fontFamily: 'Poppins-Medium',
                           }}>
-                          {size}
+                          {item.name}
                         </Text>
                       </View>
-                    ),
-                  )}
-                </ScrollView>
+                    )}
+                  />
+                </View>
                 <View style={styles.footer}>
                   <TouchableOpacity
                     style={styles.clearButton}
@@ -431,13 +715,14 @@ const SubCategory = ({ navigation, route: { params } }) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.applyButton}
-                    onPress={() => setSizeModal(false)}>
+                    onPress={_handleSizeFIlter}>
                     <Text style={styles.applyButtonText}>Apply</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
-          </Modal>
+          </FilterModal>
+
         </>
       ) : (
         <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>

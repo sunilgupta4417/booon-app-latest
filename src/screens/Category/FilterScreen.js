@@ -32,7 +32,7 @@ const FilterScreen = ({
     if (selectedCategory == 'discount') {
       setdiscount_values(appliedFilter?.discount_value && appliedFilter?.discount_value !== '' ? appliedFilter?.discount_value : '')
     } else if (selectedCategory == 'category') {
-      setsubsubcat_id(appliedFilter?.subsubcat_id?.length > 0 ? appliedFilter?.subsubcat_id : [])
+      setsubsubcat_id(appliedFilter?.subsubcat_id?.length > 0 ? appliedFilter?.subsubcat_id : []);
     } else if (selectedCategory == 'price') {
       setPrice(appliedFilter?.price !== '' ? appliedFilter?.price : '')
     } else if (selectedCategory == 'gender') {
@@ -52,7 +52,7 @@ const FilterScreen = ({
       fontFamily:'Poppins-Medium'
     };
     switch (selectedCategory) {
-      case 'price':
+      case 'price': 
         return (
           <View>
             {[...screenData?.price].map(option => (
@@ -163,9 +163,9 @@ const FilterScreen = ({
                 <Checkbox
                   status={subsubcat_id.includes(category?.cat_id) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    let subsubcat_id = [...subsubcat_id]
-                    subsubcat_id.push(category?.cat_id)
-                    setsubsubcat_id(subsubcat_id);
+                    let subsubcatIdFilter = [...subsubcat_id]
+                    subsubcatIdFilter.push(category?.cat_id)
+                    setsubsubcat_id(subsubcatIdFilter);
                   }}
                 />
                 <Text style={style}>{category?.name}</Text>
@@ -220,8 +220,8 @@ const FilterScreen = ({
     setcolor([]);
     setbrandname([]);
     setPrice('');
-    setshort('')
-    setsubsubcat_id([])
+    setshort('');
+    setsubsubcat_id([]);
     close({});
   };
 

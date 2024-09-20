@@ -13,6 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from 'react-native';
 import React, {
   useCallback,
@@ -33,125 +34,13 @@ import { useSelector } from 'react-redux';
 const { width: viewportWidth, height } = Dimensions.get('window');
 import { getAddressList } from '../../hooks/hook';
 import { useQuery } from '@tanstack/react-query';
+import { WebView } from 'react-native-webview';
 
-
-
-// const SearchModal = (props, ref) => {
-//   const [showModal, setShowModal] = useState(false);
-//   const [data, setData] = useState([]);
-
-//   useImperativeHandle(ref, () => ({
-//     setShowModal: () => {
-//       if (showModal == false) {
-//         setShowModal(true);
-//       }
-//     },
-//     setData,
-//     onData: values => {
-//       if (showModal == false) {
-//         setShowModal(true);
-//       }
-//       setData(values);
-//     },
-//   }));
-//   if (!showModal) return null;
-
-//   const itemWidth = viewportWidth / 4;
-//   return (
-//     <View
-//       style={{
-//         position: 'absolute',
-//         zIndex: 10,
-//         left: 0,
-//         top: 110,
-//         right: 0,
-//         bottom: 0,
-//         backgroundColor: 'white',
-//       }}>
-//       <Text
-//         style={{
-//           fontSize: 15,
-//           color: 'black',
-//           marginTop: 10,
-//           marginLeft: 15,
-//           marginBottom: 14,
-//         }}>
-//         Recent Searches
-//       </Text>
-//       <View style={{ height: 40 }}>
-//         {/* <FlatList
-//           style={{ paddingHorizontal: 20 }}
-//           horizontal={true}
-//           data={['Black Tshirt', 'Dress for party', 'Dress for']}
-//           renderItem={({ item }) => (
-//             <View
-//               style={{
-//                 borderRadius: 20,
-//                 borderColor: 'rgba(222, 222, 224, 1)',
-//                 borderWidth: 1,
-//                 height: 38,
-//                 paddingHorizontal: 18,
-//                 justifyContent: 'center',
-//                 alignItems: 'center',
-//               }}>
-//               <Text style={{ fontSize: 15, color: 'black' }}>{item}</Text>
-//             </View>
-//           )}
-//         /> */}
-//       </View>
-//       <Text
-//         style={{
-//           fontSize: 15,
-//           color: 'black',
-//           marginTop: 30,
-//           marginLeft: 15,
-//           marginBottom: 14,
-//         }}>
-//         Popular Categories
-//       </Text>
-//       <FlatList
-//         data={data}
-//         numColumns={4}
-//         renderItem={({ item }) => (
-//           <View
-//             style={{
-//               height: 106,
-//               marginTop: 20,
-//               alignItems: 'center',
-//               width: itemWidth,
-//             }}>
-//             {item?.variants[0]?.imageUrls?.length > 0 ? (
-//               <>
-//                 <Image
-//                   source={{ uri: item?.variants[0]?.imageUrls[0] }}
-//                   style={{
-//                     backgroundColor: '#e6e6e6',
-//                     height: 64,
-//                     width: 64,
-//                     borderRadius: 60,
-//                   }}
-//                 />
-//               </>
-//             ) : null}
-
-//             <Text
-//               numberOfLines={2}
-//               style={{ textAlign: 'center', marginTop: 7, fontSize: 12 }}>
-//               {item?.variants[0]?.productName}
-//             </Text>
-//           </View>
-//         )}
-//       />
-//     </View>
-//   );
-// };
-
-// const SearchModalRef = forwardRef(SearchModal);
+const width = Dimensions.get('window').width;
 
 const HomeScreen = ({ navigation }) => {
   const searchRef = useRef();
   const { cart_count, wish_list_count } = useSelector(state => state.Cart);
-
   const [activeSlide, setActiveSlide] = useState(0);
   const [headerCatData, setHeaderCatData] = useState(null);
   const [bannerData, setBannerData] = useState([]);
@@ -168,17 +57,23 @@ const HomeScreen = ({ navigation }) => {
   const [imageBase, setImageBase] = useState('');
   const [token, setToken] = useState(null);
   const [generalSetting, setGeneralSetting] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [tackingURL, setTrackingURL] = useState('');
+  const [orderData, setOrderData] = useState([]);
+  const [isClosedTrack, setIsClosedTrack] = useState(true);
+
   const dispatch = useDispatch();
 
   const Allfunc = async () => {
-    getBrandData();
+    await generalSettings();
     await getCount();
     await getHeaderCategory();
     await getBannerData();
-    await  getWearCategory();
+    await getWearCategory();
     await getTestimonials();
     await getTokenAndAddresses();
-    generalSettings();
+    await getOrders();
+    await getBrandData();
   }
 
   useFocusEffect(
@@ -189,6 +84,35 @@ const HomeScreen = ({ navigation }) => {
       Allfunc();
     }, []),
   );
+
+  const getOrders = async () => {
+    const savedToken = await AsyncStorage.getItem('token');
+    const data = JSON.parse(await AsyncStorage.getItem('userData'));
+    const headers = {
+      Authorization: `Bearer ${savedToken}`,
+    };
+    console.log("Body Data => " + JSON.stringify({
+      user_id: data?.id,
+      device_id: global.deviceId,
+      order_type: 'new_order'
+    }));
+    const response = await axios.post(
+      `${BASE_URL}/order-list`,
+      {
+        user_id: data?.id,
+        device_id: global.deviceId,
+        order_type: 'new_order'
+      },
+      {
+        headers,
+      },
+    );
+    if (response.status == 200) {
+      console.log('-=-=', response?.data);
+      setOrderData(response.data);
+    }
+  };
+
   const getHeaderCategory = async () => {
     const response = await axios.get(`${BASE_URL}/header-category`);
     if (response.status == 200) {
@@ -214,9 +138,10 @@ const HomeScreen = ({ navigation }) => {
     const response = await axios.get(
       `${BASE_URL}/brand?seller_id=${global.sellerId}`,
     );
+    console.log();
     if (response.data.status_code == 200) {
       setBrandData(response.data.data);
-    }else{
+    } else {
       setBrandData([])
     }
   };
@@ -283,23 +208,25 @@ const HomeScreen = ({ navigation }) => {
     // }
     const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
     const addressChanged = await AsyncStorage.getItem('addressChange');
+    // console.log("Stored location of the user  =>> " + userCurrentLocation);
+    // console.log("Stored addressChange of the user  =>> " + addressChange);
     id = JSON.parse(userCurrentLocation)
     global.sellerId = id.sellerId
     setaddressChange(addressChanged)
     setCurrentLocation(JSON.parse(userCurrentLocation))
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     _getUserCurrentLocation()
-  },[currentLocation])
-  
+  }, [currentLocation])
+
 
   const goToProductList = item => {
     navigation.navigate('SubCategory2', { bannerData: item });
   };
 
   const renderBanner = ({ item, index }) => (
-    <TouchableOpacity onPress={() => goToProductList(item)} key={index+'banner'}>
+    <TouchableOpacity onPress={() => goToProductList(item)} key={index + 'banner'}>
       <ImageBackground source={{ uri: item.image }} style={styles.carouselItem}>
         <Image
           style={{ height: 26, width: 110, margin: 10 }}
@@ -336,7 +263,7 @@ const HomeScreen = ({ navigation }) => {
   );
   const renderHeaderCat = ({ item, index }) => (
     <TouchableOpacity
-    key={index+'cat'}
+      key={index + 'cat'}
       onPress={() => {
         const params = {
           title: item.name,
@@ -355,9 +282,9 @@ const HomeScreen = ({ navigation }) => {
   const renderBrands = ({ item, index }) => {
     return (
       <TouchableOpacity
-      key={index+'brand'}
+        key={index + 'brand'}
         onPress={() =>
-          navigation.navigate('SubCategory2', { brandname: item.brand_name, title:item.brand_name})
+          navigation.navigate('SubCategory2', { brandname: item.brand_name, title: item.brand_name })
         }>
         <Image
           style={{
@@ -372,9 +299,9 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const reanderHappyCustomer = ({ item,index }) => (
+  const reanderHappyCustomer = ({ item, index }) => (
     <ImageBackground
-    key={index+'custo'}
+      key={index + 'custo'}
       style={{ width: 304, height: 354, justifyContent: 'flex-end', margin: 4 }}
       source={{ uri: `${imageBase}/${item.image}` }}>
       <View style={styles.overlay}>
@@ -386,10 +313,10 @@ const HomeScreen = ({ navigation }) => {
     </ImageBackground>
   );
 
-  const WearComp = ({ img, title, subtitle, subsubCatData,index , direction }) => (
+  const WearComp = ({ img, title, subtitle, subsubCatData, index, direction }) => (
     <>
       <TouchableOpacity
-      key={index+'wear'}
+        key={index + 'wear'}
         onPress={() =>
           navigation.navigate('SubCategory', {
             title: title,
@@ -400,10 +327,11 @@ const HomeScreen = ({ navigation }) => {
         style={{
           flexDirection: direction,
           width: '96%',
-          height: 110,
+          height: 130,
           alignItems: 'center',
           alignSelf: 'center',
           marginTop: 12,
+          borderWidth: 2,
         }}>
         <Image style={{ width: '50%', height: 110 }} source={{ uri: img }} />
         <View
@@ -450,12 +378,15 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const navigateOnApp = (type, txt) => {
-    if(type == 'whatsapp'){
-      Linking.openURL('whatsapp://send?phone='+txt)
-    }else{
-      Linking.openURL('mailto:'+txt)
+    console.log("call Navigate App");
+    if (type == 'whatsapp') {
+      console.log("Go to whatsapp");
+      Linking.openURL('whatsapp://send?phone=' + txt)
+    } else {
+      Linking.openURL('mailto:' + txt)
     }
   }
+
   const renderWearItem = ({ item, index }) => (
     <WearComp
       title={item.title}
@@ -466,11 +397,12 @@ const HomeScreen = ({ navigation }) => {
       direction={index % 2 === 0 ? 'row' : 'row-reverse'}
     />
   );
-  const ShareButton = ({ url, txt, color,type,navigate }) => (
+
+  const ShareButton = ({ url, txt, color, type, navigate }) => (
     <TouchableOpacity
-    onPress={()=>navigateOnApp(type,txt)}
+      onPress={() => navigateOnApp(type, txt)}
       style={{
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#FFFFFF',
         width: '100%',
         borderRadius: 24,
@@ -513,17 +445,71 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('SearchProduct')
   }
 
+  const enableTrackModal = (url) => {
+    setTrackingURL(url);
+    setModalVisible(true);
+  }
+
+  const renderTrackList = ({ item, index }) => (
+    <View style={{ flex: 1, width: width / 1.2, flexDirection: "column", borderWidth: 1, borderRadius: 5, borderColor: "gray", marginRight: 10 }}>
+      <View style={{ paddingRight: "", position: "absolute", elevation: 1, zIndex: 1, top: 5, right: 12 }}>
+        <TouchableOpacity style={{ justifyContent: "center", alignItems: "center", borderWidth: 1, borderRadius: 15, borderColor: "gray", height: 20, width: 20, }} onPress={() => setIsClosedTrack(!isClosedTrack)}>
+          <Text style={{ fontFamily: "Poppins-Bold", color: "gray", fontSize: 10 }}>x</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{ weight: width / 1.8, justifyContent: "center", paddingLeft: 5, borderColor: "gray", }}>
+        <Text style={{ fontFamily: "Poppins-Bold", fontSize: 12, textAlign: "left", width: width / 1.8 }}>1 style, Ketch Slim fit black will reach you in 60 mins.</Text>
+      </View>
+      <View style={{ paddingHorizontal: 5, justifyContent: "flex-end", paddingBottom: 10, borderBottom: 1, borderColor: "gray", }}>
+        <TouchableOpacity disabled={!item?.customer_tracking_url ? true : false} style={{ alignSelf: "flex-end", width: width / 2.5, paddingHorizontal: 40, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 6 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
+          <Text style={{ color: '#fff', fontFamily: "Poppins-Bold", fontSize: 11 }}>Track</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+
   return (
     <SafeAreaView style={styles.container}>
       {/* <SearchModalRef ref={searchRef} /> */}
+      {isClosedTrack ?
+        <>
+          {orderData.length > 0 ?
+            <View style={{
+              height: 90, width: "90%", alignSelf: "center", position: "absolute",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
+              zIndex: 2,
+              backgroundColor: "white",
+              borderWidth: 0,
+              bottom: 15,
+              borderRadius: 10,
+              padding: 5
+            }}>
+              <FlatList
+                data={orderData.length > 0 ? orderData : []}
+                renderItem={renderTrackList}
+                horizontal={true}
+                keyExtractor={(item, index) => index.toString()}
+              />
+            </View>
+            : null}
+        </>
+        : null}
+
       <View style={styles.header}>
         <View>
           <Image
-              source={require('../../assets/logoHome.png')}
-              style={{width:40,height:40}}
-            />
+            source={require('../../assets/logoHome.png')}
+            style={{ width: 40, height: 40 }}
+          />
         </View>
-        <View style={{marginLeft:15,flexGrow:1}}>
+        <View style={{ marginLeft: 15, flexGrow: 1 }}>
           <TouchableOpacity
             onPress={navigateSearch}
             style={{
@@ -540,12 +526,13 @@ const HomeScreen = ({ navigation }) => {
                 style={[
                   styles.headerSubtitle,
                 ]}>
-                  {addressChange == 'false' ? addressDetail?.data?.length > 0
-                  && <Text style={styles.headerTitle}>{addressDetail?.data[0]?.add_type + ', '}</Text>:
-                  <Text style={styles.headerTitle}>{currentLocation?.add_type !== undefined && currentLocation?.add_type+', '}</Text>}
-                {addressChange == 'false' ? addressDetail?.data?.length > 0
+                {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
+                  && <Text style={styles.headerTitle}>{addressDetail?.data[0]?.add_type + ', '}</Text> :
+                  <Text style={styles.headerTitle}>{currentLocation?.add_type !== undefined && currentLocation?.add_type + ', '}</Text>} */}
+                {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                   && addressDetail?.data[0]?.address
-                  : currentLocation?.address}
+                  : currentLocation?.address} */}
+                {currentLocation?.address}
               </Text>
 
               <View style={{ flexDirection: 'row' }}>
@@ -574,7 +561,7 @@ const HomeScreen = ({ navigation }) => {
                   top: 0,
                   zIndex: 1,
                 }}>
-                <Text style={{ color: 'white', fontSize: 8,fontFamily:'Poppins-Medium' }}>
+                <Text style={{ color: 'white', fontSize: 8, fontFamily: 'Poppins-Medium' }}>
                   {wish_list_count}
                 </Text>
               </View>
@@ -584,7 +571,7 @@ const HomeScreen = ({ navigation }) => {
               style={styles.wishlist}
             />
           </TouchableOpacity>
-          <TouchableOpacity  onPress={() => navigation.navigate('BagScreen')}>
+          <TouchableOpacity onPress={() => navigation.navigate('BagScreen')}>
             {cart_count > 0 && (
               <View
                 style={{
@@ -599,7 +586,7 @@ const HomeScreen = ({ navigation }) => {
                   top: 0,
                   zIndex: 1,
                 }}>
-                <Text style={{ color: 'white', fontSize: 8,fontFamily:'Poppins-Medium' }}>{cart_count}</Text>
+                <Text style={{ color: 'white', fontSize: 8, fontFamily: 'Poppins-Medium' }}>{cart_count}</Text>
               </View>
             )}
             <Image
@@ -655,12 +642,77 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-        <FlatList
+        {/* Here ! */}
+        {
+          wearCompData.map((item, index) => (
+            <TouchableOpacity
+              onPress={() => {
+                const params = {
+                  title: item.name,
+                  tag: item.title,
+                  subsubCatData: item.data,
+                  ...(item.cat_id && { cat_id: item.cat_id }),
+                  ...(item.subcat_id && { subcat_id: item.subcat_id }),
+                  ...(item.subsubcat_id && { subsubcat_id: item.subsubcat_id }),
+                };
+                navigation.navigate('SubCategory', params);
+              }}
+            >
+              <View style={{ flexDirection: index % 2 === 0 ? 'row' : 'row-reverse', height: 110, marginTop: 10, marginHorizontal: 10 }} key={index.toString()}>
+                <Image style={{ width: '50%', height: 110 }} source={{ uri: item.image }} />
+                <View
+                  style={{
+                    backgroundColor: '#F0F0F0',
+                    flex: 1,
+                    height: '100%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      // fontWeight: Platform.OS == 'android' ? '700' : '500',
+                      fontFamily: 'Poppins-SemiBold',
+                      lineHeight: 21,
+                      color: '#000000',
+                    }}>
+                    {item.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      // fontWeight: '400',
+                      lineHeight: 18,
+                      fontFamily: 'Poppins-Medium',
+                      color: '#000000',
+                    }}>
+                    {item.sub_title}
+                  </Text>
+                </View>
+              </View>
+              <Image
+                style={{
+                  width: 28,
+                  height: 28,
+                  position: 'absolute',
+                  left: '46%',
+                  top: '40%',
+                }}
+                source={require('../../assets/Home/arrowR.png')}
+              />
+            </TouchableOpacity>
+          ))
+        }
+        {/* End */}
+
+        {/* <FlatList
           data={wearCompData}
           renderItem={renderWearItem}
           keyExtractor={(item, index) => index.toString()}
-        // contentContainerStyle={{ paddingBottom: 20 }}
-        />
+          // scrollEnabled={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        /> */}
+
         <View
           style={{
             flexDirection: 'row',
@@ -681,11 +733,11 @@ const HomeScreen = ({ navigation }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderWidth: 0,
-                width:100
+                width: 100
                 // marginHorizontal: responsiveWidth(15),
               }}>
               <Image
-                style={{ width: 40, height: 40,resizeMode:'contain' }}
+                style={{ width: 40, height: 40, resizeMode: 'contain' }}
                 source={{ uri: item.title }}
               />
               <Text
@@ -715,12 +767,12 @@ const HomeScreen = ({ navigation }) => {
           }}>
           Brand Spotlight
         </Text>
-        <FlatList
-          data={brandData}
-          renderItem={renderBrands}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        /></>
+          <FlatList
+            data={brandData}
+            renderItem={renderBrands}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          /></>
         }
         <Text
           style={{
@@ -775,23 +827,157 @@ const HomeScreen = ({ navigation }) => {
               }}>
               {generalSetting?.home_contact_detail}
             </Text>
-            <ShareButton
-              txt={generalSetting?.whatsapp_number}
-              navigate={generalSetting?.whatsapp_message}
-              type={'whatsapp'}
-              url={require('../../assets/Home/watsapp.png')}
-            />
-            <ShareButton
+            <View style={{ borderWidth: 0, borderColor: "#fff" }}>
+              <TouchableOpacity
+                onPress={() => navigateOnApp('whatsapp', generalSetting?.whatsapp_number)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#FFFFFF',
+                  width: '100%',
+                  borderRadius: 24,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 4,
+                  marginBottom: 10,
+                }}>
+                <Image
+                  style={{
+                    height: 24,
+                    width: 24,
+                    backgroundColor: "#E5DFD2",
+                    margin: 5,
+                    marginHorizontal: 10,
+                    borderRadius: 12,
+                  }}
+                  source={require('../../assets/Home/watsapp.png')}
+                />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '400',
+                    lineHeight: 21,
+                    fontFamily: 'Poppins',
+                    color: '#ffffff',
+                    marginHorizontal: 10,
+                  }}>
+                  {generalSetting?.whatsapp_message}
+                </Text>
+              </TouchableOpacity>
+              {/* <ShareButton
+                txt={generalSetting?.whatsapp_number}
+                navigate={generalSetting?.whatsapp_message}
+                type={'whatsapp'}
+                url={require('../../assets/Home/watsapp.png')}
+              /> */}
+            </View>
+            <View>
+              <TouchableOpacity
+                onPress={() => navigateOnApp('mail', generalSetting?.email)}
+                style={{
+                  borderWidth: 2,
+                  borderColor: '#FFFFFF',
+                  width: '100%',
+                  borderRadius: 24,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 4,
+                  marginBottom: 10,
+                }}>
+                <Image
+                  style={{
+                    height: 24,
+                    width: 24,
+                    backgroundColor: '#E5DFD2',
+                    margin: 5,
+                    marginHorizontal: 10,
+                    borderRadius: 12,
+                  }}
+                  source={require('../../assets/Home/share.png')}
+                />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '400',
+                    lineHeight: 21,
+                    fontFamily: 'Poppins',
+                    color: '#ffffff',
+                    marginHorizontal: 10,
+                  }}>
+                  {generalSetting?.email_message}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {/* <ShareButton
               type={'mail'}
               txt={generalSetting?.email}
               navigate={generalSetting?.email_message}
               url={require('../../assets/Home/share.png')}
               color={'#E5DFD2'}
-            />
+            /> */}
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <View
+            style={{
+              flex: 0.8,
+              backgroundColor: 'white',
+              margin: 20,
+              borderRadius: 10,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: 10,
+                borderBottomWidth: 2,
+                borderColor: 'black', // Rough border color
+                borderStyle: 'dashed', // Rough border style
+                backgroundColor: '#f8f8f8',
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Order Tracking</Text>
+              {/* 'X' Close Button */}
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={{
+                  padding: 5,
+                  borderColor: 'black',
+                  borderWidth: 2,
+                  borderStyle: 'dashed',
+                  borderRadius: 5,
+                }}
+              >
+                <Text style={{ fontSize: 20, fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* WebView to show the URL content */}
+            <WebView
+              source={{ uri: tackingURL }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView >
   );
 };
 
@@ -806,7 +992,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    alignItems:'center',
+    alignItems: 'center',
     margin: 10,
   },
   headerTitle: {
@@ -843,7 +1029,7 @@ const styles = StyleSheet.create({
   txtIp: {
     padding: 5,
     flex: 1,
-    fontFamily:'Poppins-Medium'
+    fontFamily: 'Poppins-Medium'
   },
   SearchIcon: {
     width: 24,
@@ -873,7 +1059,7 @@ const styles = StyleSheet.create({
     fontSize: 12, // Smaller text to fit in reduced height
     // fontWeight: '400',
     lineHeight: 18,
-    fontFamily:'Poppins-Medium',
+    fontFamily: 'Poppins-Medium',
     color: '#212121',
   },
   carouselWrapper: {
@@ -956,7 +1142,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 10,
     width: '80%',
-    height: 82,
+    height: 99,
   },
   modalOverlay: {
     flex: 1,
