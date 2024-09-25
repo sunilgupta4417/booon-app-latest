@@ -123,10 +123,20 @@ const FilterScreen = ({
               <View key={option?.name} style={styles.option}>
                 <Checkbox
                   status={size.includes(option?.name) ? 'checked' : 'unchecked'}
+                  // onPress={() => {
+                  //   let sizefilter = [...size]
+                  //   sizefilter.push(option?.name)
+                  //   setsize(sizefilter)
+                  // }}
                   onPress={() => {
-                    let sizefilter = [...size]
-                    sizefilter.push(option?.name)
-                    setsize(sizefilter)
+                    let sizeFilter = [...size]
+                    const sizeIndex = sizeFilter.indexOf(option?.name);
+                    if (sizeIndex !== -1) {
+                      sizeFilter.splice(sizeIndex, 1);
+                    } else {
+                      sizeFilter.push(option?.name);
+                    }
+                    setsize(sizeFilter)
                   }}
                 />
                 <Text style={style}>{option?.name}</Text>
@@ -142,8 +152,15 @@ const FilterScreen = ({
                 <Checkbox
                   status={color.includes(colors?.name) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    let colorsfilter = [...color]
-                    colorsfilter.push(colors?.name)
+                    let colorsfilter = [...color];
+                    const colorIndex = colorsfilter.indexOf(colors?.name);
+                    if (colorIndex !== -1) {
+                      // Color is already present, so remove it
+                      colorsfilter.splice(colorIndex, 1);
+                    } else {
+                      // Color is not present, so add it
+                      colorsfilter.push(colors?.name);
+                    }
                     setcolor(colorsfilter);
                   }}
                 />
@@ -163,8 +180,13 @@ const FilterScreen = ({
                 <Checkbox
                   status={subsubcat_id.includes(category?.cat_id) ? 'checked' : 'unchecked'}
                   onPress={() => {
-                    let subsubcatIdFilter = [...subsubcat_id]
-                    subsubcatIdFilter.push(category?.cat_id)
+                    let subsubcatIdFilter = [...subsubcat_id];
+                    const subCatIndex = subsubcatIdFilter.indexOf(category?.cat_id);
+                    if (subCatIndex !== -1) {
+                      subsubcatIdFilter.splice(subCatIndex, 1);
+                    } else {
+                      subsubcatIdFilter.push(category?.cat_id);
+                    }
                     setsubsubcat_id(subsubcatIdFilter);
                   }}
                 />
@@ -183,9 +205,14 @@ const FilterScreen = ({
                     brandname.includes(brand?.brandname) ? 'checked' : 'unchecked'
                   }
                   onPress={() => {
-                    let brandfilter = [...brandname]
-                    brandfilter.push(brand?.brandname)
-                    setbrandname(brandfilter);
+                    let brandFilter = [...brandname]
+                    const brandIndex = brandFilter.indexOf(brand?.brandname);
+                    if (brandIndex !== -1) {
+                      brandFilter.splice(brandIndex, 1);
+                    } else {
+                      brandFilter.push(brand?.brandname);
+                    }
+                    setbrandname(brandFilter);
                   }}
                 />
                 <Text style={style}>{brand?.brandname}</Text>

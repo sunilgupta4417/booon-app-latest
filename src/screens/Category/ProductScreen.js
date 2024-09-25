@@ -97,7 +97,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const [selectedSize, setSelectedSize] = useState('');
   const [currentLocation, setCurrentLocation] = useState();
   const [addListModal, setAddListModal] = useState(false);
-  const [addressChange, setaddressChange] = useState('false')
+  const [addressChange, setAddressChange] = useState('false')
   const [roadDistance, setRoadDistance] = useState('');
   const [productIds, setProductIds] = React.useState({
     catId: '',
@@ -119,7 +119,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
     setCurr(JSON.parse(userCurrentLocation))
     const addressChanged = await AsyncStorage.getItem('addressChange');
-    setaddressChange(addressChanged)
+    setAddressChange(addressChanged)
   }
 
   const getUserAddress = async () => {
@@ -586,7 +586,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader back search wishlist bag />
+      <CustomHeader back wishlist bag />
       {productDetail ? (
         <>
           <FlatList
@@ -770,16 +770,12 @@ const ProductScreen = ({ navigation, route: { params } }) => {
                           <Text style={[styles.headerTitle, { width: '100%' }]} numberOfLines={1}>
                             Delivery to{' '}
                             <Text style={{ fontWeight: 'bold' }}>
-                              {addressChange == 'false' ? addressDetail?.data?.length > 0
+                              {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                                 && addressDetail?.data[0]?.address
-                                : curr?.address}
+                                : curr?.address} */}
+                              {curr?.address}
                             </Text>
                           </Text>
-                          {/* {console.log(
-                            currentLocation,
-                            'currentLocation349873493443348',
-                          )} */}
-                          {/* <Image style={{ height: 6, width: 10, margin: 4 }} source={require('../../assets/Home/down.png')} /> */}
                         </TouchableOpacity>
                       </View>
                       <Text

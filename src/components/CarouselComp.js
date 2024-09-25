@@ -5,14 +5,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, {useState} from 'react';
-import Carousel, {Pagination} from 'react-native-snap-carousel';
-import {responsiveHeight} from '../utils';
+import React, { useState } from 'react';
+import Carousel from 'react-native-reanimated-carousel';
+import { responsiveHeight } from '../utils';
 
-const {width: viewportWidth, height} = Dimensions.get('window');
-const CarouselComp = ({productDetail}) => {
+const { width: viewportWidth, height } = Dimensions.get('window');
+const CarouselComp = ({ productDetail }) => {
   const [activeSlide, setActiveSlide] = useState(0);
-  const renderItem2 = ({item}) => (
+  const renderItem2 = ({ item }) => (
     <ImageBackground
       source={{
         uri: `${productDetail?.images_url}/${productDetail?.product.seller_id}/${item.image}`,
@@ -30,27 +30,31 @@ const CarouselComp = ({productDetail}) => {
     }
   }).slice(0, 6);
 
-  console.log(uniqueArray,'uniqueArray9347934wiwiweuewi')
+  console.log(uniqueArray, 'uniqueArray9347934wiwiweuewi')
   return (
-    <View style={{marginBottom: 10}}>
+    <View style={{ marginBottom: 10 }}>
       <Carousel
+        loop
         data={uniqueArray}
         renderItem={renderItem2}
-        sliderWidth={viewportWidth}
-        itemWidth={viewportWidth}
-        layout={'default'}
-        onSnapToItem={index => setActiveSlide(index)}
+        autoPlay={true}
+        width={viewportWidth}
+        height={responsiveHeight(620)}
+        scrollAnimationDuration={1000}
+        onSnapToItem={(index) => setActiveSlide(index)}
+        pagingEnabled={true}
       />
-      <Pagination
-        dotsLength={uniqueArray.length}
-        activeDotIndex={activeSlide}
-        containerStyle={styles.paginationContainer}
-        dotContainerStyle={styles.paginationDotContainer}
-        dotStyle={styles.paginationDot}
-        inactiveDotStyle={styles.inactiveDot}
-        inactiveDotOpacity={0.4}
-        inactiveDotScale={0.8}
-      />
+      <View style={styles.paginationContainer}>
+        {uniqueArray.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.paginationDot,
+              activeSlide === index && { backgroundColor: 'white' },
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 };
@@ -66,27 +70,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: '#11111173',
     borderRadius: 10,
-    // maxWidth:'58%',
-    // overflow:'hidden'
-  },
-  paginationDotContainer: {
-    marginHorizontal: 2,
+    flexDirection: 'row',
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     marginHorizontal: 2,
-    backgroundColor: 'white',
-  },
-  inactiveDot: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderWidth: 4,
-    borderColor: 'white',
   },
   carouselItem: {
     backgroundColor: 'lightgray',
-    // borderRadius: 10,
     height: responsiveHeight(620),
     width: '100%',
     justifyContent: 'flex-end',

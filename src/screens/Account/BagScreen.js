@@ -28,6 +28,7 @@ import { getAddressList } from '../../hooks/hook';
 import { AddressContainer } from '../../components/AddressContainer';
 import { useSelector } from 'react-redux';
 import { haversineDistance } from '../../helpers/phoneValidator';
+import moment from 'moment';
 
 const width = Dimensions.get('window').width;
 const height = Dimensions.get('window').height;
@@ -239,6 +240,65 @@ const BagScreen = ({ navigation }) => {
     setModalData(item);
   };
 
+  function isTimeBetween(current, start, end) {
+    // Helper function to convert time string to minutes from midnight
+    function timeToMinutes(time) {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+
+    // Convert times to minutes from midnight
+    const currentMinutes = timeToMinutes(current);
+    const startMinutes = timeToMinutes(start);
+    const endMinutes = timeToMinutes(end);
+
+    // Check if the current time is between start and end times
+    if (startMinutes <= endMinutes) {
+      // When the end time is later in the day than the start time
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    } else {
+      // When the end time is earlier in the day (crosses midnight)
+      return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+    }
+  }
+
+  const dynamicDeliveryTime = (distance, workStartTime, workEndTime) => {
+    console.log("Coming distance is =>> " + '\n' + distance + '\n' + workStartTime + '\n' + workEndTime);
+    let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
+    if (distance > 20) {
+      const extraDistance = distance - 20;
+      const additionalTime = extraDistance * 8; // 8 minutes per km over 15 km
+      travelTimeMinutes += additionalTime;
+    }
+    const hours = Math.floor(travelTimeMinutes / 60);
+    const minutes = travelTimeMinutes % 60;
+    // Check order time
+    const nowDate = new Date();
+    const hour = nowDate.getHours().toString().padStart(2, '0');
+    const minute = nowDate.getMinutes().toString().padStart(2, '0');
+    const currentTime = `${hour}:${minute}:00`
+    let timeDiff = isTimeBetween(currentTime, workStartTime, workEndTime);
+    if (timeDiff) {
+      return `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`;
+    } else {
+      // Get the current hour
+      const currentHour = moment().hour();
+      // Check if the current time is between 12 AM and 6 AM
+      let tomorrow;
+      if (currentHour >= 0 && currentHour < 6) {
+        // If current time is between 12 AM and 6 AM, don't add a day
+        tomorrow = moment().format('DD MMM, YYYY');
+      } else {
+        // If current time is outside 12 AM to 6 AM, add a day
+        tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
+      }
+      const time = moment(workStartTime, 'HH:mm:ss');
+      time.add(travelTimeMinutes, 'minutes');
+      const newTime = time.format('HH:mm A');
+      return `Delivery by ${tomorrow} at ${newTime}`
+    }
+  }
+
   const cartProductView = ({ item, index }) => (
     <View style={[styles.row, { width: "100%", borderWidth: 0, marginVertical: 10 }]}>
       <Image
@@ -292,7 +352,7 @@ const BagScreen = ({ navigation }) => {
               styles.row,
               {
                 borderWidth: 1,
-                borderColor: '#DEDEE0', 
+                borderColor: '#DEDEE0',
                 borderRadius: 20,
                 padding: 6,
               },
@@ -349,7 +409,8 @@ const BagScreen = ({ navigation }) => {
           lineHeight: 16,
           color: '#111111', marginTop: 0,
         }}>
-          {item.delivery_time === null ? "" : item.delivery_time}
+          {/* {item.delivery_time === null ? "" : item.delivery_time} */}
+          {dynamicDeliveryTime(item.Distance, item.workinng_start_time, item.workinng_end_time)}
         </Text>
 
         <Text style={{ fontWeight: '400', color: '#64646D99' }}>
@@ -1136,7 +1197,7 @@ const BagScreen = ({ navigation }) => {
                     you can move it to your wishlist for later.
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row',justifyContent:"center", marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: "center", marginBottom: 10 }}>
                   {/* <ButtonComp
                     title={'Move to Wishlist'}
                     bdrColor={'#DEDEE0'}
@@ -1406,14 +1467,14 @@ const BagScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
                 <FlatList data={AddressLists} renderItem={renderAddresses} />
-                {/* <ButtonComp
+                <ButtonComp
                   onPress={addAddressModal}
                   title={'Add Address'}
                   imgStyle={{ width: 14, height: 14, marginRight: 5 }}
                   width={'40%'}
                   color={'#111111'}
                   txtColor={'#FFFFFF'}
-                /> */}
+                />
               </View>
             </View>
           </Modal>

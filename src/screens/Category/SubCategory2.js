@@ -54,6 +54,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   const [isCategorySelected, setIsCategorySelected] = useState(false);
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState();
   const updateIndexStatus = useRef({});
+  const [showButton, setShowButton] = useState(false);
+  const flatListRef = useRef(null);  // Ref for FlatList
 
   useFocusEffect(
     useCallback(() => {
@@ -64,9 +66,9 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   useEffect(() => {
     const getAllLists = async () => {
       getCount()
+      await getFilter();
       await getSubCategory();
       await getProductList(1);
-      await getFilter();
     }
     getAllLists();
   }, []);
@@ -94,10 +96,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     if (subCategoryId.current) {
       url = url + `&subsubcat_id=${subCategoryId.current}`;
     }
-    console.log('-=-=-url-=-=url-=-=-', url);
-
+    console.log("body of Get filter in mens =>> " + url);
     const res = await axios.get(url);
-    console.log("Here is the Res Data => " + JSON.stringify(res));
     if (res?.data) {
       setFilterData(res?.data);
     }
@@ -116,8 +116,6 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       ...(params.subcat_id && { subcat_id: params.subcat_id }),
       ...(params.subsubcat_id && { subsubcat_id: params.subsubcat_id }),
     };
-    console.log('-=-=-paramsData-=-=-paramsData-=-=', paramsData);
-
     const response = await axios.post(
       `${BASE_URL}/sub-sub-category`,
       paramsData,
@@ -127,8 +125,6 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     setSubCategory(res?.data || []);
 
   };
-
-
 
   const renderSubCategory = ({ item }) => (
     <TouchableOpacity
@@ -171,7 +167,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     }
   };
 
-  const getProductList = async (pageNum, no_of_item = 10) => {
+  const getProductList = async (pageNum, no_of_item = 16) => {
     setIsLoading(true)
     let body = {
       page: pageNum,
@@ -194,7 +190,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     if (body.discount_value && body.discount_value !== '0') {
       body.type = 'discount'
     }
-
+    console.log("body of Get product in mens =>> " + JSON.stringify(body));
     const response = await axios.post(`${BASE_URL}/product-list`, body);
     if (response.status === 200) {
       setIsLoading(false)
@@ -306,7 +302,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         {item.name}
       </Text>
     </TouchableOpacity>
-  ); 
+  );
 
   const FilterListing = () => {
     return (
@@ -433,31 +429,62 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
       if (value?.price && value?.price !== '') {
         filterValue.price = value?.price;
       }
-
-      filterSort.current = filterValue;
-      getProductList(1);
+      if (value?.brandname?.length ||
+        value?.color?.length ||
+        value?.subsubcat_id?.length ||
+        value?.gender && value?.gender !== '' ||
+        value?.short && value?.short !== '' ||
+        value?.size?.length ||
+        value?.discount_value && (value?.discount_value !== '' ||
+          value?.discount_value !== undefined) ||
+        value?.price && value?.price !== '') {
+        filterSort.current = filterValue;
+        getProductList(1);
+        await getFilter();
+      }
       setFilterModal(false);
-      await getFilter();
     } else {
       filterSort.current = {};
-      getProductList(1);
       setFilterModal(false);
       setAppliedFilter({});
-      await getFilter();
+      // getProductList(1);
+      // await getFilter();
     }
   }
 
+  // Function to handle scroll to top
+  const scrollToTop = () => {
+    flatListRef.current?.scrollToOffset({ animated: true, offset: 0 });
+  };
+
+  // Function to track scroll position
+  const handleScroll = (event) => {
+    const scrollOffset = event.nativeEvent.contentOffset.y;
+    if (scrollOffset > 600) {
+      setShowButton(true);
+    } else {
+      setShowButton(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title={params.title} back search wishlist bag />
+      <CustomHeader title={params.title} back wishlist bag />
       <FlatList
+        ref={flatListRef} // Reference the FlatList
         data={subCategoryData}
         renderItem={renderSubCategory}
         numColumns={2}
         style={{ borderWidth: 0 }}
         keyExtractor={(item, index) => index + ''}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={0.7}
+        onScroll={handleScroll}  // Track scroll position
+        onEndReached={({ distanceFromEnd }) => {
+          if (distanceFromEnd > 0) {
+            console.log("Value is distanceFromEnd =>> " + distanceFromEnd);
+            handleLoadMore();
+          }
+        }}
         ListHeaderComponent={() => (
           <>
             <View style={params.bannerData || params.brandname || params.height ? {} : { height: 100, }}>
@@ -507,6 +534,19 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
           )
         }
       />
+
+      {showButton && (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={scrollToTop}
+        >
+          <Image
+            source={require('../../assets/backW.png')}  // Replace with your arrow image
+            style={[styles.buttonIcon, { transform: [{ rotate: '90deg' }] }]}
+          />
+        </TouchableOpacity>
+      )}
+
       {/* Sort By Filter! */}
       <FilterModal
         isVisible={sortModal}
@@ -816,5 +856,24 @@ const styles = StyleSheet.create({
   applyButtonText: {
     fontSize: 14,
     color: '#FFFFFF', fontFamily: 'Poppins-Medium',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#000000',
+    borderRadius: 30,
+    padding: 15,
+    elevation: 5,
+  },
+  buttonIcon: {
+    width: 20,
+    height: 20,
+    tintColor: 'white',
+  },
+  noDataView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
   },
 });

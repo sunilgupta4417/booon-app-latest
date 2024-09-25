@@ -378,9 +378,7 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const navigateOnApp = (type, txt) => {
-    console.log("call Navigate App");
     if (type == 'whatsapp') {
-      console.log("Go to whatsapp");
       Linking.openURL('whatsapp://send?phone=' + txt)
     } else {
       Linking.openURL('mailto:' + txt)
@@ -468,6 +466,8 @@ const HomeScreen = ({ navigation }) => {
     </View>
   )
 
+  console.log("user Address =>> " + JSON.stringify(currentLocation));
+
   return (
     <SafeAreaView style={styles.container}>
       {/* <SearchModalRef ref={searchRef} /> */}
@@ -532,7 +532,7 @@ const HomeScreen = ({ navigation }) => {
                 {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                   && addressDetail?.data[0]?.address
                   : currentLocation?.address} */}
-                {currentLocation?.address}
+                {currentLocation.add_type ? currentLocation.add_type.toUpperCase() + ":- " + currentLocation?.address : currentLocation?.address}
               </Text>
 
               <View style={{ flexDirection: 'row' }}>

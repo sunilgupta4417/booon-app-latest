@@ -57,6 +57,8 @@ const SubCategory = ({ navigation, route: { params } }) => {
     { lable: 'Price - High to Low', value: 'high_to_low' },
     { lable: 'Price - Low to High', value: 'low_to_high' }
   ];
+  const [showButton, setShowButton] = useState(false);
+  const flatListRef = useRef(null);  // Ref for FlatList
 
 
   useEffect(() => {
@@ -87,10 +89,9 @@ const SubCategory = ({ navigation, route: { params } }) => {
     }
   };
 
-  const getProductList = async (pageNum, no_of_item = 10) => {
+  const getProductList = async (pageNum, no_of_item = 16) => {
     // if (isLoading || !hasMoreData) return;
     setIsLoading(true);
-    console.log("Call Product List => " + filterSort.current.gender);
     const tagsString = tagsData.join(',');
     const body = {
       page: pageNum,
@@ -98,6 +99,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
       ...(params.cat_id && { cat_id: params.cat_id }),
       ...(gender !== null || filterSort.current.gender !== null && { gender: filterSort.current.gender !== null ? filterSort.current.gender : gender }),
       ...(sortBy !== null && { short: sortBy }),
+      brandname: filterSort.current.brandname !== null ? filterSort.current.brandname : '',
       seller_id: global.sellerId
     };
     if (no_of_item) {
@@ -107,9 +109,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
       `${BASE_URL}/product-list`,
       body,
     );
-    console.log("Body of Product == > " + JSON.stringify(body));
     if (response.status == 200) {
-      console.log("Response of Product List !! ")
       setIsLoading(false);
       setImageBase(global.imageThumbPath)
       if (pageNum === 1) {
@@ -132,7 +132,6 @@ const SubCategory = ({ navigation, route: { params } }) => {
     }
     setIsLoading(false);
   };
-  // console.log(tagsData,"tagsData")
 
 
   const resetAndFetchProducts = () => {
@@ -279,10 +278,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
       url = url + `&gender=${filterSort.current.gender}`;
     }
 
-    console.log('-=-=-url-=-=url-=-=-', url);
-
     const res = await axios.get(url);
-    console.log("Here is the Res Data => " + JSON.stringify(res));
     if (res?.data) {
       setFilterData(res?.data);
     }
@@ -446,32 +442,61 @@ const SubCategory = ({ navigation, route: { params } }) => {
       if (value?.price && value?.price !== '') {
         filterValue.price = value?.price;
       }
-      console.log("Set the value of filterSort!");
-      filterSort.current = filterValue;
-      getProductList(1);
+      if (value?.brandname?.length ||
+        value?.color?.length ||
+        value?.subsubcat_id?.length ||
+        value?.gender && value?.gender !== '' ||
+        value?.short && value?.short !== '' ||
+        value?.size?.length ||
+        value?.discount_value && (value?.discount_value !== '' ||
+          value?.discount_value !== undefined) ||
+        value?.price && value?.price !== '') {
+        filterSort.current = filterValue;
+        getProductList(1);
+        await getFilter();
+      }
       setFilterModal(false);
-      await getFilter();
     } else {
-      console.log("I'm in the Else!");
       filterSort.current = {};
-      getProductList(1);
       setFilterModal(false);
-      await getFilter();
+      // getProductList(1);
+      // await getFilter();
     }
   }
+
+  // Function to handle scroll to top
+  const scrollToTop = () => {
+    flatListRef.current?.scrollToOffset({ animated: true, offset: 0 });
+  };
+
+  // Function to track scroll position
+  const handleScroll = (event) => {
+    const scrollOffset = event.nativeEvent.contentOffset.y;
+    if (scrollOffset > 600) {
+      setShowButton(true);
+    } else {
+      setShowButton(false);
+    }
+  };
 
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title={params.title} back search wishlist bag />
+      <CustomHeader title={params.title} back wishlist bag />
       {subCategoryData.length > 0 ? (
         <>
           <FlatList
+            ref={flatListRef} // Reference the FlatList
             data={subCategoryData}
             renderItem={renderSubCategory}
             numColumns={2}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.1}
+            onEndReachedThreshold={0.7}
+            onScroll={handleScroll}  // Track scroll position
+            onEndReached={({ distanceFromEnd }) => {
+              if (distanceFromEnd > 0) {
+                handleLoadMore();
+              }
+            }}
             ListHeaderComponent={() => (
               <>
                 <FlatList
@@ -530,9 +555,6 @@ const SubCategory = ({ navigation, route: { params } }) => {
                         setSizeModal(true);
                       }}
                     />
-                    {/* <FilterComp name={'Sort by'} onPress={() => setSortModal(true)} /> */}
-                    {/* <FilterComp name={'Gender'} onPress={() => setGenderModal(true)} /> */}
-                    {/* <FilterComp name={'Size'} onPress={() => setSizeModal(true)} /> */}
                   </View>
                 </View>
               </>
@@ -544,7 +566,18 @@ const SubCategory = ({ navigation, route: { params } }) => {
             }
           />
 
-          {/* Side Filter! */}
+          {showButton && (
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={scrollToTop}
+            >
+              <Image
+                source={require('../../assets/backW.png')}  // Replace with your arrow image
+                style={[styles.buttonIcon, { transform: [{ rotate: '90deg' }] }]}
+              />
+            </TouchableOpacity>
+          )}
+
           <FilterModal
             isVisible={filterModal}
             onBackButtonPress={() => {
@@ -569,7 +602,6 @@ const SubCategory = ({ navigation, route: { params } }) => {
             </View>
           </FilterModal>
 
-          {/* Sort By Filter! */}
           <FilterModal
             isVisible={sortModal}
             onBackButtonPress={() => {
@@ -611,7 +643,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
               </View>
             </View>
           </FilterModal>
-          {/* Gender Filter! */}
+
           <FilterModal
             isVisible={genderModal}
             onBackButtonPress={() => {
@@ -654,7 +686,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
               </View>
             </View>
           </FilterModal>
-          {/* Size Filter */}
+
           <FilterModal
             isVisible={sizeModal}
             onBackButtonPress={() => {
@@ -698,7 +730,6 @@ const SubCategory = ({ navigation, route: { params } }) => {
                             marginLeft: 16,
                             color: '#64646D',
                             fontSize: 14,
-                            // fontWeight: '400',
                             fontFamily: 'Poppins-Medium',
                           }}>
                           {item.name}
@@ -722,7 +753,6 @@ const SubCategory = ({ navigation, route: { params } }) => {
               </View>
             </View>
           </FilterModal>
-
         </>
       ) : (
         <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>
@@ -834,5 +864,24 @@ const styles = StyleSheet.create({
   applyButtonText: {
     fontSize: 14,
     color: '#FFFFFF',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#000000',
+    borderRadius: 30,
+    padding: 15,
+    elevation: 5,
+  },
+  buttonIcon: {
+    width: 20,
+    height: 20,
+    tintColor: 'white',
+  },
+  noDataView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
   },
 });

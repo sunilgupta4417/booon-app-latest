@@ -25,27 +25,27 @@ export default function OrderSuccess({ navigation, route }) {
     const onCancelOrder = async () => {
       setLoading(true);
       const savedToken = await AsyncStorage.getItem('token');
-      const headers = {
-        Authorization: `Bearer ${savedToken}`,
-      };
-
-      console.log("this is the order ids =>> " + routeData.orderResponse.order_ids);
-
-      const body = JSON.stringify({
-        id: routeData.orderResponse.order_ids
+      let data = JSON.stringify({
+        'id': routeData.orderResponse.order_ids
       });
-
-      const response = await axios.post(
-        `${BASE_URL}/cancel-order`,
-        { body },
-        { headers },
-      );
-
-      console.log("Cancel order response =>> " + JSON.stringify(response));
-
-      if (response?.status == 200) {
-        navigation.navigate('Account', { response });
-      }
+      let config = {
+        method: 'get',
+        maxBodyLength: Infinity,
+        url: `https://apistaging.booon.in/api/cancel-order?ids=${routeData?.orderResponse?.order_ids.join(',')}`,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${savedToken}`
+        },
+      };
+      axios.request(config)
+        .then((response) => {
+          console.log(JSON.stringify(response.data));
+          navigation.navigate('Account', { response });
+        })
+        .catch((error) => {
+          console.log(error);
+        });
       setLoading(false);
     };
 
@@ -71,15 +71,15 @@ export default function OrderSuccess({ navigation, route }) {
   const CountDown = () => {
     const [timeLeft, setTimeLeft] = useState(120);
     useEffect(() => {
-      // if (timeLeft > 0) {
-      //   const timerId = setInterval(() => {
-      //     setTimeLeft(timeLeft => timeLeft - 1);
-      //   }, 1000);
+      if (timeLeft > 0) {
+        const timerId = setInterval(() => {
+          setTimeLeft(timeLeft => timeLeft - 1);
+        }, 1000);
 
-      //   return () => clearInterval(timerId); // Cleanup the interval on component unmount
-      // }else{
-      //   navigation.navigate('Account')
-      // }
+        return () => clearInterval(timerId); // Cleanup the interval on component unmount
+      } else {
+        navigation.navigate('Account')
+      }
     }, [timeLeft]);
 
     const formatTime = (seconds) => {

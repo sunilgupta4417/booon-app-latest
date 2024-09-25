@@ -114,7 +114,7 @@ const Address = ({ navigation }) => {
             Mobile: {item.mobile}
           </Text>
         </View>
-        <View>
+        {/* <View>
           <CheckBox
             value={primaryAddress}
             onValueChange={()=>_setPrimaryAddress(item)}
@@ -125,7 +125,7 @@ const Address = ({ navigation }) => {
             onTintColor="grey"
             style={{ height: 25, width: 25 }}
           />
-        </View>
+        </View> */}
       </View>
       <View style={styles.row}>
         <ButtonComp

@@ -1,4 +1,4 @@
-package com.booon
+package com.booon.mobileApp
 
 import android.app.Application
 import com.facebook.react.PackageList

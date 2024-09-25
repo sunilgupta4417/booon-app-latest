@@ -19,7 +19,7 @@ const Occassion = ({ navigation }) => {
       setWearCompData(response.data.data.tags)
     }
   }
-  useEffect(() => {
+  useEffect(() => { 
     getWearCategory()
   }, [])
 
@@ -47,7 +47,7 @@ const Occassion = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <CustomHeader title={"Occassions"} search wishlist bag />
+      <CustomHeader title={"Occassions"} wishlist bag />
       <FlatList
         data={wearCompData}
         renderItem={renderItem}

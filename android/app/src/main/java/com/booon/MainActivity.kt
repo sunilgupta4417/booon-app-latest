@@ -1,4 +1,4 @@
-package com.booon
+package com.booon.mobileApp
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
