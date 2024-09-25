@@ -5,14 +5,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Carousel from 'react-native-reanimated-carousel';
-import { responsiveHeight } from '../utils';
+import {responsiveHeight} from '../utils';
 
-const { width: viewportWidth, height } = Dimensions.get('window');
-const CarouselComp = ({ productDetail }) => {
+const {width: viewportWidth, height} = Dimensions.get('window');
+const CarouselComp = ({productDetail}) => {
   const [activeSlide, setActiveSlide] = useState(0);
-  const renderItem2 = ({ item }) => (
+  const renderItem2 = ({item}) => (
     <ImageBackground
       source={{
         uri: `${productDetail?.images_url}/${productDetail?.product.seller_id}/${item.image}`,
@@ -21,27 +21,29 @@ const CarouselComp = ({ productDetail }) => {
   );
 
   let seen = new Set();
-  let uniqueArray = productDetail?.images.filter(item => {
-    if (seen.has(item.image)) {
-      return false;
-    } else {
-      seen.add(item.image);
-      return true;
-    }
-  }).slice(0, 6);
+  let uniqueArray = productDetail?.images
+    .filter(item => {
+      if (seen.has(item.image)) {
+        return false;
+      } else {
+        seen.add(item.image);
+        return true;
+      }
+    })
+    .slice(0, 6);
 
-  console.log(uniqueArray, 'uniqueArray9347934wiwiweuewi')
+  console.log(uniqueArray, 'uniqueArray9347934wiwiweuewi');
   return (
-    <View style={{ marginBottom: 10 }}>
+    <View style={{marginBottom: 10}}>
       <Carousel
         loop
         data={uniqueArray}
         renderItem={renderItem2}
-        autoPlay={true}
+        autoPlay={false}
         width={viewportWidth}
         height={responsiveHeight(620)}
-        scrollAnimationDuration={1000}
-        onSnapToItem={(index) => setActiveSlide(index)}
+        snapEnabled
+        onSnapToItem={index => setActiveSlide(index)}
         pagingEnabled={true}
       />
       <View style={styles.paginationContainer}>
@@ -50,7 +52,7 @@ const CarouselComp = ({ productDetail }) => {
             key={index}
             style={[
               styles.paginationDot,
-              activeSlide === index && { backgroundColor: 'white' },
+              activeSlide === index && {backgroundColor: 'white'},
             ]}
           />
         ))}
