@@ -104,7 +104,6 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     subCatId: '',
     subSubCatId: ''
   });
-  const [flatListScrollEnabled, setFlatListScrollEnabled] = useState(true);
 
   useFocusEffect(
     useCallback(async () => {
@@ -132,14 +131,21 @@ const ProductScreen = ({ navigation, route: { params } }) => {
 
   const getProductDetail = async () => {
     const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
+    // params?.wishlist ? params?.item?.product_id : params?.item?.id,->params?.tenantMetadata?.product_id
     let productID = (params?.wishlist ? params?.item?.product_id : params?.item?.id) || params?.item?.tenantMetadata?.product_id;
+    console.log("Product ID =>> " + productID);
     const response = await axios.get(
       `${BASE_URL}/product-detail/${productID}?user_id=${id}&device_id=${global.deviceId}`,
     );
+
+    console.log("Here is the Response of Product Details -> " + JSON.stringify(response?.data));
     setProductDetail(response.data);
     getRoadDistance(response.data);
     setIsFav(response.data?.is_wishlist);
+    // setIsBag(response.data?.is_bag);
+    console.log("This is the response of data ==> " + response.data?.is_wishlist);
     let tempArray = response?.data?.product?.feature;
+    console.log("Length => " + tempArray.length);
     setProductIds({
       catId: response.data?.product?.cat_id,
       subCatId: response.data?.product?.subcat_id,
@@ -161,6 +167,8 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const getSimilarProd = async pageNum => {
     if (isLoading || !hasMoreData) return;
     setIsLoading(true);
+    console.log("params data is here => " + JSON.stringify(params.item));
+
     const body = {
       page: pageNum - 1,
       cat_id: productIds.catId,
@@ -173,10 +181,13 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       // ...(params.item.subsubcat_id !== null && { subsubcat_id: params.item.subsubcat_id }),
       // ...(params.item.brandname !== null && { brandname: params.item.brandname }),
     };
+    console.log("Here is the Body! bla bla=>> " + JSON.stringify(body));
     const response = await axios.post(
       `${BASE_URL}/product-list`,
       body,
     );
+    console.log("Here is the response => " + JSON.stringify(response));
+    console.log("Here is the response  afdsfasg => " + global.sellerId);
     if (response.status === 200) {
       setImageBase(global.imageThumbPath);
       if (response.data.product.data.length > 0) {
@@ -204,14 +215,16 @@ const ProductScreen = ({ navigation, route: { params } }) => {
         user_id: id,
         device_id: global.deviceId,
       };
+      console.log("Wishlist ID ==> " + JSON.stringify(body));
       const response = await axios.post(
         `${BASE_URL}/add-remove-wish-list`,
         body,
         { headers },
       );
       if (response.data.status_code == 200) {
-        getCount();
-        setIsFav(!isFav);
+        getCount()
+        setIsFav(!isFav)
+        // dispatch({ type: 'BAG_COUNT', payload: {wish_list_count:wishListData.length - 1} });
       }
     } else {
       navigation.navigate('Login');
@@ -234,6 +247,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
         const savedToken = await AsyncStorage.getItem('token');
         setToken(savedToken);
         if (savedToken) {
+          // console.log('test : ', filterCartData?.length);
           if (isBag) {
             navigation.navigate('BagScreen');
           } else {
@@ -251,6 +265,10 @@ const ProductScreen = ({ navigation, route: { params } }) => {
             } else {
               imagePath = `${global.imageThumbPath}${params?.item?.seller_id}/${params?.item?.image}`
             }
+            console.log("This is the image going to the backend  => " + imagePath);
+            // const sellerID = params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id;
+            // const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
+            // ${imageBase}/${params?.item?.seller_id}/${params?.item?.image}
             const body = {
               user_id: id,
               device_id: global.deviceId,
@@ -268,6 +286,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
               shipping_charge: 10,
               delivery_time: roadDistance
             };
+            console.log('bodyAddCart ==>> ', body);
             const response = await axios.post(`${BASE_URL}/add-in-cart`, body, {
               headers,
             });
@@ -276,6 +295,8 @@ const ProductScreen = ({ navigation, route: { params } }) => {
               setIsBag(true)
               // getCartData();
             }
+
+            // alert(JSON.stringify(body))
           }
         } else {
           navigation.navigate('Login');
@@ -435,6 +456,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   };
 
   const _updateSections = activeSections => {
+    console.log(activeSections);
     setActiveSections(activeSections);
   };
 
@@ -508,6 +530,8 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       const response = await axios.get(url);
       const distanceValue = response.data.rows[0].elements[0].distance.value; // distance in meters
       const distanceKm = distanceValue / 1000;
+      console.log('-=-distanceValue-=-', distanceValue);
+
 
       let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
 
@@ -558,354 +582,356 @@ const ProductScreen = ({ navigation, route: { params } }) => {
     }
   }
 
+  console.log("productDetail?.size_chart", productDetail?.size_chart);
+
   return (
     <SafeAreaView style={styles.container}>
       <CustomHeader back wishlist bag />
-      <ScrollView nestedScrollEnabled={true}>
-        {productDetail ? (
-          <>
-            <CarouselComp productDetail={productDetail} />
-            <FlatList
-              data={subCategoryData}
-              renderItem={renderSubCategory}
-              scrollEnabled={false}
-              numColumns={2}
-              style={{ borderWidth: 0 }}
-              keyExtractor={(item, index) => index + ''}
-              ListHeaderComponent={() => (
-                <>
-                  <View style={{ padding: 10, marginBottom: 0 }}>
+      {productDetail ? (
+        <>
+          <FlatList
+            data={subCategoryData}
+            renderItem={renderSubCategory}
+            numColumns={2}
+            style={{ borderWidth: 0 }}
+            keyExtractor={(item, index) => index + ''}
+            ListHeaderComponent={() => (
+              <>
+                <CarouselComp productDetail={productDetail} />
+                <View style={{ padding: 10, marginBottom: 0 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: Platform.OS == 'android' ? '700' : '500',
+                      fontFamily: 'Poppins',
+                      marginBottom: 5,
+                      color: '#111111',
+                    }}>
+                    {productDetail?.product.brandname}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '400',
+                      fontFamily: 'Poppins',
+                      color: '#64646D',
+                    }}>
+                    {productDetail?.product.shortdescription}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginVertical: 5,
+                    }}>
                     <Text
                       style={{
-                        fontSize: 14,
-                        fontWeight: Platform.OS == 'android' ? '700' : '500',
+                        fontSize: 16,
                         fontFamily: 'Poppins',
-                        marginBottom: 5,
+                        fontWeight: Platform.OS == 'android' ? '700' : '500',
+                        marginRight: 5,
                         color: '#111111',
                       }}>
-                      {productDetail?.product.brandname}
+                      ₹{parseInt(productDetail?.product.sellprice)}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontFamily: 'Poppins',
+                        fontWeight: '400',
+                        color: '#64646D',
+                        textDecorationLine: 'line-through',
+                        marginRight: 5,
+                      }}>
+                      ₹{parseInt(productDetail?.product.costprice)}
                     </Text>
                     <Text
                       style={{
                         fontSize: 12,
-                        fontWeight: '400',
-                        fontFamily: 'Poppins',
-                        color: '#64646D',
+                        fontFamily: 'Inter',
+                        fontWeight: Platform.OS == 'android' ? '700' : '500',
+                        marginRight: 5,
+                        color: '#FFFFFF',
+                        backgroundColor: '#5EB160',
+                        padding: 2,
                       }}>
-                      {productDetail?.product.shortdescription}
+                      {productDetail?.product.discount}% OFF
                     </Text>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        marginVertical: 5,
-                      }}>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontFamily: 'Poppins',
-                          fontWeight: Platform.OS == 'android' ? '700' : '500',
-                          marginRight: 5,
-                          color: '#111111',
-                        }}>
-                        ₹{parseInt(productDetail?.product.sellprice)}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontFamily: 'Poppins',
-                          fontWeight: '400',
-                          color: '#64646D',
-                          textDecorationLine: 'line-through',
-                          marginRight: 5,
-                        }}>
-                        ₹{parseInt(productDetail?.product.costprice)}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontFamily: 'Inter',
-                          fontWeight: Platform.OS == 'android' ? '700' : '500',
-                          marginRight: 5,
-                          color: '#FFFFFF',
-                          backgroundColor: '#5EB160',
-                          padding: 2,
-                        }}>
-                        {productDetail?.product.discount}% OFF
-                      </Text>
-                    </View>
+                  </View>
 
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginVertical: 16,
-                      }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: Platform.OS == 'android' ? '700' : '500',
-                          color: '#111111',
-                        }}>
-                        Select Size
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setSizeModal(productDetail?.size_chart ? true : false)}
-                        style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Image
-                          style={{ height: 20, width: 20, marginRight: 5 }}
-                          source={require('../../assets/measuring.png')}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Poppins',
-                            color: '#000000',
-                            textDecorationLine: 'underline',
-                          }}>
-                          Size Chart
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                      {productSize.map(item => (
-                        <TouchableOpacity
-                          onPress={() => setSelectedSize(item)}
-                          disabled={item?.qty == 0}
-                          style={{
-                            borderWidth: 1,
-                            borderRadius: 5,
-                            paddingVertical: 10,
-                            position: 'relative',
-                            width: responsiveWidth(50),
-                            alignItems: 'center',
-                            marginRight: 15,
-                            backgroundColor:
-                              selectedSize.name == item.name
-                                ? '#5EB160'
-                                : 'transparent',
-                            borderColor:
-                              item?.qty == 0
-                                ? 'lightgray'
-                                : selectedSize.name == item.name
-                                  ? 'white'
-                                  : 'grey',
-                          }}>
-                          {item?.qty == 0 && <View style={styles.cutLine}></View>}
-                          <Text
-                            style={{
-                              color:
-                                item?.qty == 0
-                                  ? 'lightgray'
-                                  : selectedSize.name == item.name
-                                    ? 'white'
-                                    : '#111111',
-                              fontSize: 12,
-                              fontWeight: '400',
-                              fontFamily: 'Poppins',
-                            }}>
-                            {item.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-
-                    <View
-                      style={{
-                        backgroundColor: '#F3F3F6',
-                        padding: 20,
-                        flexDirection: 'row',
-                      }}>
-                      <View
-                        style={{
-                          height: 32,
-                          width: 32,
-                          borderRadius: 16,
-                          backgroundColor: '#FFFFFF',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: 10,
-                        }}>
-                        <Image
-                          style={{ height: 14, width: 10 }}
-                          source={require('../../assets/marker.png')}
-                        />
-                      </View>
-                      <View style={{ flexGrow: 1 }}>
-                        <View style={{ flexDirection: 'row' }}>
-                          <TouchableOpacity
-                            // onPress={async() => {await AsyncStorage.setItem('fromScreen','bag');navigation.navigate('SearchLocation')}}
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              borderWidth: 0,
-                              width: '96%',
-                            }}>
-                            <Text style={[styles.headerTitle, { width: '100%' }]} numberOfLines={1}>
-                              Delivery to{' '}
-                              <Text style={{ fontWeight: 'bold' }}>
-                                {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
-                                && addressDetail?.data[0]?.address
-                                : curr?.address} */}
-                                {curr?.address}
-                              </Text>
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            fontWeight: '400',
-                            fontFamily: 'Poppins',
-                            color: '#64646D',
-                          }}>{roadDistance}
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        width: '95%',
-                        justifyContent: 'space-evenly',
-                        borderWidth: 0,
-                        alignSelf: 'center',
-                        marginVertical: 15,
-                      }}>
-                      <ServiceComp
-                        txt={'24 hrs to return, no questions'}
-                        uri={require('../../assets/Home/clock.png')}
-                      />
-                      <ServiceComp
-                        txt={'Cash on Delivery Available'}
-                        uri={require('../../assets/Home/cash.png')}
-                      />
-                      <ServiceComp
-                        txt={'Free Shipping Above ₹500'}
-                        uri={require('../../assets/Home/delivery.png')}
-                      />
-                    </View>
-                    <View
-                      style={{ backgroundColor: '#F3F3F6', padding: 10, marginTop: 10 }}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}>
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "900",
-                            fontFamily: 'Poppins-Medium',
-                            color: '#333',
-                          }}>
-                          Product Details
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", backgroundColor: '#F3F3F6', justifyContent: "flex-start" }}>
-                      {
-                        feature?.map((item, index) => (
-                          <View
-                            key={index}
-                            style={{
-                              width: "43%", // Adjust the width for grid-like view (3 columns per row)
-                              height: 50,
-                              backgroundColor: '#F3F3F6',
-                              margin: 5, // Add margin for spacing
-                              padding: 7
-                            }}>
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                fontWeight: "bold",
-                                fontFamily: 'Poppins-Bold',
-                                color: '#111111',
-                                marginBottom: 5, textAlign: "left"
-                              }}>
-                              {Object.keys(item)[0] === 'vendorArticleNumber'
-                                ? 'VENDOR ARTICLE NUMBER'
-                                : Object.keys(item)[0].toUpperCase()}
-                            </Text>
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                fontWeight: '400',
-                                fontFamily: 'Poppins-Medium',
-                                color: '#111111',
-                                textAlign: "left"
-                              }}>
-                              {Object.values(item)[0] ? Object.values(item)[0].length > 15 ? Object.values(item)[0].substring(0, 15) + '...' : Object.values(item)[0] : null}
-                            </Text>
-                          </View>
-                        ))
-                      }
-                    </View>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginVertical: 16,
+                    }}>
                     <Text
                       style={{
                         fontSize: 14,
                         fontWeight: Platform.OS == 'android' ? '700' : '500',
-                        fontFamily: 'Poppins',
-                        lineHeight: 22,
-                        marginVertical: 10,
                         color: '#111111',
                       }}>
-                      Similar Products
+                      Select Size
                     </Text>
+                    <TouchableOpacity
+                      onPress={() => setSizeModal(productDetail?.size_chart ? true : false)}
+                      style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Image
+                        style={{ height: 20, width: 20, marginRight: 5 }}
+                        source={require('../../assets/measuring.png')}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                          fontFamily: 'Poppins',
+                          color: '#000000',
+                          textDecorationLine: 'underline',
+                        }}>
+                        Size Chart
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                </>
-              )}
-              onEndReached={handleLoadMore}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={
-                isLoading && <ActivityIndicator size="small" color="#000" />
-              }
-            />
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-evenly',
-                borderTopWidth: 1,
-                width: '100%',
-                borderColor: '#DEDEE0',
-                backgroundColor: '#FFFFFF',
-              }}>
-              <ButtonComp
-                onPress={updateWishList}
-                title={isFav ? 'Wishlisted' : 'Wishlist'}
-                img={
-                  isFav
-                    ? require('../../assets/fav.png')
-                    : require('../../assets/Wishlist1.png')
-                }
-                imgStyle={{
-                  width: isFav ? 18 : 28,
-                  height: isFav ? 15 : 28,
-                  marginRight: 5,
-                }}
-                width={'45%'}
-                color={'#FFFFFF'}
-                txtColor={'#111111'}
-                bdrColor={'#DEDEE0'}
-              />
-              <ButtonComp
-                onPress={() => addToBag()}
-                title={isBag ? 'Go to Bag' : 'Add to Bag'}
-                img={require('../../assets/bagW.png')}
-                imgStyle={{ width: 14, height: 14, marginRight: 5 }}
-                width={'45%'}
-                color={'#111111'}
-                txtColor={'#FFFFFF'}
-              />
-            </View>
-          </>
-        ) : (
-          <ActivityIndicator size="small" color="#000" />
-        )}
 
-      </ScrollView>
+                  <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                    {productSize.map(item => (
+                      <TouchableOpacity
+                        onPress={() => setSelectedSize(item)}
+                        disabled={item?.qty == 0}
+                        style={{
+                          borderWidth: 1,
+                          borderRadius: 5,
+                          paddingVertical: 10,
+                          position: 'relative',
+                          width: responsiveWidth(50),
+                          alignItems: 'center',
+                          marginRight: 15,
+                          backgroundColor:
+                            selectedSize.name == item.name
+                              ? '#5EB160'
+                              : 'transparent',
+                          borderColor:
+                            item?.qty == 0
+                              ? 'lightgray'
+                              : selectedSize.name == item.name
+                                ? 'white'
+                                : 'grey',
+                        }}>
+                        {item?.qty == 0 && <View style={styles.cutLine}></View>}
+                        <Text
+                          style={{
+                            color:
+                              item?.qty == 0
+                                ? 'lightgray'
+                                : selectedSize.name == item.name
+                                  ? 'white'
+                                  : '#111111',
+                            fontSize: 12,
+                            fontWeight: '400',
+                            fontFamily: 'Poppins',
+                          }}>
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <View
+                    style={{
+                      backgroundColor: '#F3F3F6',
+                      padding: 20,
+                      flexDirection: 'row',
+                    }}>
+                    <View
+                      style={{
+                        height: 32,
+                        width: 32,
+                        borderRadius: 16,
+                        backgroundColor: '#FFFFFF',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 10,
+                      }}>
+                      <Image
+                        style={{ height: 14, width: 10 }}
+                        source={require('../../assets/marker.png')}
+                      />
+                    </View>
+                    <View style={{ flexGrow: 1 }}>
+                      <View style={{ flexDirection: 'row' }}>
+                        <TouchableOpacity
+                          // onPress={async() => {await AsyncStorage.setItem('fromScreen','bag');navigation.navigate('SearchLocation')}}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            borderWidth: 0,
+                            width: '96%',
+                          }}>
+                          <Text style={[styles.headerTitle, { width: '100%' }]} numberOfLines={1}>
+                            Delivery to{' '}
+                            <Text style={{ fontWeight: 'bold' }}>
+                              {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
+                                && addressDetail?.data[0]?.address
+                                : curr?.address} */}
+                              {curr?.address}
+                            </Text>
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '400',
+                          fontFamily: 'Poppins',
+                          color: '#64646D',
+                        }}>{roadDistance}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      width: '95%',
+                      justifyContent: 'space-evenly',
+                      borderWidth: 0,
+                      alignSelf: 'center',
+                      marginVertical: 15,
+                    }}>
+                    <ServiceComp
+                      txt={'24 hrs to return, no questions'}
+                      uri={require('../../assets/Home/clock.png')}
+                    />
+                    <ServiceComp
+                      txt={'Cash on Delivery Available'}
+                      uri={require('../../assets/Home/cash.png')}
+                    />
+                    <ServiceComp
+                      txt={'Free Shipping Above ₹500'}
+                      uri={require('../../assets/Home/delivery.png')}
+                    />
+                  </View>
+                  <View
+                    style={{ backgroundColor: '#F3F3F6', padding: 10, marginTop: 10 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "900",
+                          fontFamily: 'Poppins-Medium',
+                          color: '#333',
+                        }}>
+                        Product Details
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", backgroundColor: '#F3F3F6', justifyContent: "flex-start" }}>
+                    {
+                      feature?.map((item, index) => (
+                        <View
+                          key={index}
+                          style={{
+                            width: "43%", // Adjust the width for grid-like view (3 columns per row)
+                            height: 50,
+                            backgroundColor: '#F3F3F6',
+                            margin: 5, // Add margin for spacing
+                            padding: 7
+                          }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "bold",
+                              fontFamily: 'Poppins-Bold',
+                              color: '#111111',
+                              marginBottom: 5, textAlign: "left"
+                            }}>
+                            {Object.keys(item)[0] === 'vendorArticleNumber'
+                              ? 'VENDOR ARTICLE NUMBER'
+                              : Object.keys(item)[0].toUpperCase()}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: '400',
+                              fontFamily: 'Poppins-Medium',
+                              color: '#111111',
+                              textAlign: "left"
+                            }}>
+                            {Object.values(item)[0] ? Object.values(item)[0].length > 15 ? Object.values(item)[0].substring(0, 15) + '...' : Object.values(item)[0] : null}
+                          </Text>
+                        </View>
+                      ))
+                    }
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: Platform.OS == 'android' ? '700' : '500',
+                      fontFamily: 'Poppins',
+                      lineHeight: 22,
+                      marginVertical: 10,
+                      color: '#111111',
+                    }}>
+                    Similar Products
+                  </Text>
+                </View>
+              </>
+            )}
+            onEndReached={({ distanceFromEnd }) => {
+              if (distanceFromEnd > 0.1) {
+                handleLoadMore();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              isLoading && <ActivityIndicator size="small" color="#000" />
+            }
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-evenly',
+              borderTopWidth: 1,
+              width: '100%',
+              borderColor: '#DEDEE0',
+              backgroundColor: '#FFFFFF',
+            }}>
+            <ButtonComp
+              onPress={updateWishList}
+              title={isFav ? 'Wishlisted' : 'Wishlist'}
+              img={
+                isFav
+                  ? require('../../assets/fav.png')
+                  : require('../../assets/Wishlist1.png')
+              }
+              imgStyle={{
+                width: isFav ? 18 : 28,
+                height: isFav ? 15 : 28,
+                marginRight: 5,
+              }}
+              width={'45%'}
+              color={'#FFFFFF'}
+              txtColor={'#111111'}
+              bdrColor={'#DEDEE0'}
+            />
+            <ButtonComp
+              onPress={() => addToBag()}
+              title={isBag ? 'Go to Bag' : 'Add to Bag'}
+              img={require('../../assets/bagW.png')}
+              imgStyle={{ width: 14, height: 14, marginRight: 5 }}
+              width={'45%'}
+              color={'#111111'}
+              txtColor={'#FFFFFF'}
+            />
+          </View>
+        </>
+      ) : (
+        <ActivityIndicator size="small" color="#000" />
+      )}
       <Modal
         animationType="slide"
         transparent={true}

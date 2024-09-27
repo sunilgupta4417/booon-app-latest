@@ -674,9 +674,7 @@ const BagScreen = ({ navigation }) => {
               const urlencodedPay = new FormData();
               urlencodedPay.append("order_id", result?.order_ids[0]);
               urlencodedPay.append("amount", totalSP);
-              // const urlencodedPay = new FormData();
-              // urlencodedPay.append("order_id", "262");
-              // urlencodedPay.append("amount", "300");
+              urlencodedPay.append('user_id', userId);
 
               const requestConfig = {
                 method: "POST",

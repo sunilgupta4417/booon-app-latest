@@ -42,16 +42,16 @@ const CarouselComp = ({productDetail}) => {
         autoPlay={false}
         windowSize={viewportWidth}
         width={viewportWidth}
-        height={responsiveHeight(620)}
+        height={responsiveHeight(610)}
         // scrollAnimationDuration={1000}
-        snapEnabled
+        snapEnabled = {true}
         onSnapToItem={(index) => setActiveSlide(index)}
         pagingEnabled={true}
       />
       <View style={styles.paginationContainer}>
         {uniqueArray.map((_, index) => (
           <View
-            key={index}
+            key={index.toString()}
             style={[
               styles.paginationDot,
               activeSlide === index && {backgroundColor: 'white'},
