@@ -493,7 +493,7 @@ const SubCategory = ({ navigation, route: { params } }) => {
             onEndReachedThreshold={0.7}
             onScroll={handleScroll}  // Track scroll position
             onEndReached={({ distanceFromEnd }) => {
-              if (distanceFromEnd > 0) {
+              if (distanceFromEnd > 0.1) {
                 handleLoadMore();
               }
             }}

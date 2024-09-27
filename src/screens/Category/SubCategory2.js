@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  FlatList,
+  FlatList, 
   Image,
   Platform,
   SafeAreaView,
@@ -256,13 +256,13 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     updateIndexStatus.current = tempValue;
     subCategoryId.current = item?.cat_id;
     let category = { subsubcat_id: [item?.cat_id] }
-    closeFilterApply({ ...AppliedFilter, ...category })
+    closeFilterApply({ ...AppliedFilter, ...category });
 
-    try {
-      flatListRef.current?.scrollToIndex({ animated: false, index });
-    } catch (error) {
-      console.warn('Scroll to index failed', error);
-    }
+    // try {
+    //   flatListRef.current?.scrollToIndex({ animated: false, index });
+    // } catch (error) {
+    //   console.warn('Scroll to index failed', error);
+    // }
   };
 
   const renderHeaderCat = ({ item, index }) => (
@@ -480,7 +480,7 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
         onEndReachedThreshold={0.7}
         onScroll={handleScroll}  // Track scroll position
         onEndReached={({ distanceFromEnd }) => {
-          if (distanceFromEnd > 0) {
+          if (distanceFromEnd > 0.1) {
             console.log("Value is distanceFromEnd =>> " + distanceFromEnd);
             handleLoadMore();
           }

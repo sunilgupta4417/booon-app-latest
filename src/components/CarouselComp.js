@@ -36,14 +36,16 @@ const CarouselComp = ({productDetail}) => {
   return (
     <View style={{marginBottom: 10}}>
       <Carousel
-        loop
+        loop={false}
         data={uniqueArray}
         renderItem={renderItem2}
         autoPlay={false}
+        windowSize={viewportWidth}
         width={viewportWidth}
         height={responsiveHeight(620)}
+        // scrollAnimationDuration={1000}
         snapEnabled
-        onSnapToItem={index => setActiveSlide(index)}
+        onSnapToItem={(index) => setActiveSlide(index)}
         pagingEnabled={true}
       />
       <View style={styles.paginationContainer}>
@@ -73,6 +75,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#11111173',
     borderRadius: 10,
     flexDirection: 'row',
+    borderWidth: 0
   },
   paginationDot: {
     width: 8,

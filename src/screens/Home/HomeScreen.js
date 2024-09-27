@@ -218,7 +218,7 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     _getUserCurrentLocation()
-  }, [currentLocation])
+  }, []);
 
 
   const goToProductList = item => {
@@ -466,8 +466,6 @@ const HomeScreen = ({ navigation }) => {
     </View>
   )
 
-  console.log("user Address =>> " + JSON.stringify(currentLocation));
-
   return (
     <SafeAreaView style={styles.container}>
       {/* <SearchModalRef ref={searchRef} /> */}
@@ -532,7 +530,7 @@ const HomeScreen = ({ navigation }) => {
                 {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                   && addressDetail?.data[0]?.address
                   : currentLocation?.address} */}
-                {currentLocation.add_type ? currentLocation.add_type.toUpperCase() + ":- " + currentLocation?.address : currentLocation?.address}
+                {currentLocation?.add_type ? currentLocation?.add_type.toUpperCase() + ":- " + currentLocation?.address : currentLocation?.address}
               </Text>
 
               <View style={{ flexDirection: 'row' }}>

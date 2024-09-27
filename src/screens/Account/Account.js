@@ -230,6 +230,11 @@ const Account = ({ navigation }) => {
                 title="About Us"
                 brdWt={1}
               />
+              <TouchableOpacity onPress={onLogout} style={styles.logOutView}>
+                <Text style={[styles.nameTxt, { textDecorationLine: 'underline' }]}>
+                  Delete Account
+                </Text>
+              </TouchableOpacity>
               {token && (
                 <TouchableOpacity onPress={onLogout} style={styles.logOutView}>
                   <Text style={[styles.nameTxt, { textDecorationLine: 'underline' }]}>

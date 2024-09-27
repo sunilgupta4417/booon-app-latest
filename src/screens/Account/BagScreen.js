@@ -65,6 +65,8 @@ const BagScreen = ({ navigation }) => {
   const [AddressLists, setAddressLists] = useState(addressList);
   const [dataOfSeller, setDataOfSeller] = useState([]);  // this is the collection of the seller data having all cart items.
   const [totalItemCount, setTotalItemCount] = useState({});
+  const [isFav, setIsFav] = useState(false);
+  const [productDetail, setProductDetail] = useState(null);
 
   useEffect(() => {
     getCartData();
@@ -236,8 +238,10 @@ const BagScreen = ({ navigation }) => {
   };
 
   const openRemoveModal = item => {
+    console.log("Selected Item =>> " + JSON.stringify(item));
     setRemoveModal(true);
     setModalData(item);
+    setProductDetail(item);
   };
 
   function isTimeBetween(current, start, end) {
@@ -1002,6 +1006,43 @@ const BagScreen = ({ navigation }) => {
     );
   }
 
+  const getCount = async () => {
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
+    const body = {
+      user_id: id,
+      device_id: global.deviceId,
+    };
+    const response = await axios.post(`${BASE_URL}/counting`, body);
+    dispatch({ type: 'BAG_COUNT', payload: response.data });
+  };
+
+  const updateWishList = async () => {
+    const savedToken = await AsyncStorage.getItem('token');
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
+    if (savedToken) {
+      const headers = {
+        Authorization: `Bearer ${savedToken}`,
+      };
+      const body = {
+        product_id: productDetail.product_id,
+        user_id: id,
+        device_id: global.deviceId,
+      };
+      const response = await axios.post(
+        `${BASE_URL}/add-remove-wish-list`,
+        body,
+        { headers },
+      );
+      if (response.data.status_code == 200) {
+        getCount();
+        setIsFav(!isFav);
+        removeProduct();
+      }
+    } else {
+      navigation.navigate('Login');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {dataOfSeller.length > 0 ? (
@@ -1152,17 +1193,20 @@ const BagScreen = ({ navigation }) => {
             <View style={styles.modalOverlay}>
               <View style={styles.modalContainer}>
                 <View style={{ flexDirection: 'row' }}>
-                  <Text
+                  <TouchableOpacity
                     onPress={() => setRemoveModal(false)}
-                    style={{
-                      color: '#000000',
-                      fontSize: 16,
-                      fontWeight: '500',
-                      fontFamily: 'Poppins',
-                      marginRight: 20,
-                    }}>
-                    X
-                  </Text>
+                  >
+                    <Text
+                      style={{
+                        color: '#000000',
+                        fontSize: 16,
+                        fontWeight: '500',
+                        fontFamily: 'Poppins',
+                        marginRight: 20,
+                      }}>
+                      X
+                    </Text>
+                  </TouchableOpacity>
                   <Text
                     style={{
                       color: '#000000',
@@ -1198,13 +1242,24 @@ const BagScreen = ({ navigation }) => {
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: "center", marginBottom: 10 }}>
-                  {/* <ButtonComp
-                    title={'Move to Wishlist'}
-                    bdrColor={'#DEDEE0'}
-                    txtColor={'#21212F'}
+                  <ButtonComp
+                    title={isFav ? 'Wishlisted' : 'Move to Wishlist'}
+                    onPress={updateWishList}
+                    img={
+                      isFav
+                        ? require('../../assets/fav.png')
+                        : require('../../assets/Wishlist1.png')
+                    }
+                    imgStyle={{
+                      width: isFav ? 18 : 28,
+                      height: isFav ? 15 : 28,
+                      marginRight: 5,
+                    }}
                     width={'45%'}
-                    padding={2}
-                  /> */}
+                    color={'#FFFFFF'}
+                    txtColor={'#111111'}
+                    bdrColor={'#DEDEE0'}
+                  />
                   <ButtonComp
                     onPress={removeProduct}
                     title={'Yes, Remove'}

@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   BtnTxt: {
-    fontSize: 14,
+    fontSize: 13,
     // fontWeight: Platform.OS == 'android' ? '700' : '500',
     margin: 2,
     marginVertical: 8,
