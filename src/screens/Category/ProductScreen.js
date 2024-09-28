@@ -14,25 +14,27 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
-import Carousel, {Pagination} from 'react-native-snap-carousel';
-import {responsiveHeight, responsiveWidth} from '../../utils';
+import React, { useCallback, useEffect, useState } from 'react';
+import Carousel, { Pagination } from 'react-native-snap-carousel';
+import {
+  responsiveHeight,
+  responsiveWidth,
+} from '../../utils';
 import ButtonComp from '../../components/ButtonComp';
 import Accordion from 'react-native-collapsible/Accordion';
 import CustomHeader from '../../components/CustomHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import {BASE_URL, Google_Api_Key} from '../../config';
+import { BASE_URL, Google_Api_Key } from '../../config';
 import CarouselComp from '../../components/CarouselComp';
-import {useFocusEffect} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
-import {AddressContainer} from '../../components/AddressContainer';
-import {useDispatch} from 'react-redux';
-const {width: viewportWidth, height} = Dimensions.get('window');
-import {useQuery} from '@tanstack/react-query';
-import {getAddressList} from '../../hooks/hook';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { AddressContainer } from '../../components/AddressContainer';
+import { useDispatch } from 'react-redux';
+const { width: viewportWidth, height } = Dimensions.get('window');
+import { useQuery } from '@tanstack/react-query';
+import { getAddressList } from '../../hooks/hook';
 import moment from 'moment';
-import SimpleCarousel from '../../components/SimpleCarousel';
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   // Convert degrees to radians
@@ -55,9 +57,9 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.sin(dLon / 2) *
-      Math.sin(dLon / 2) *
-      Math.cos(radLat1) *
-      Math.cos(radLat2);
+    Math.sin(dLon / 2) *
+    Math.cos(radLat1) *
+    Math.cos(radLat2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   // Distance in kilometers
@@ -66,14 +68,14 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return distance;
 }
 
-const ProductScreen = ({navigation, route: {params}}) => {
-  const {data: addressDetail, isLoading: addressLoading} = useQuery({
+const ProductScreen = ({ navigation, route: { params } }) => {
+  const { data: addressDetail, isLoading: addressLoading } = useQuery({
     queryKey: ['address'],
     queryFn: getAddressList,
   });
 
   const dispatch = useDispatch();
-  const {addressList} = useSelector(state => state.Cart);
+  const { addressList } = useSelector(state => state.Cart);
   const SECTIONS = [
     {
       title: 'Product Details',
@@ -87,7 +89,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
   const [feature, setFeature] = useState([]);
   const [subCategoryData, setSubCategoryData] = useState([]);
   const [page, setPage] = useState(1);
-  const [curr, setCurr] = useState(null);
+  const [curr, setCurr] = useState(null)
   const [isLoading, setIsLoading] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [imageBase, setImageBase] = useState('');
@@ -95,12 +97,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
   const [selectedSize, setSelectedSize] = useState('');
   const [currentLocation, setCurrentLocation] = useState();
   const [addListModal, setAddListModal] = useState(false);
-  const [addressChange, setAddressChange] = useState('false');
+  const [addressChange, setAddressChange] = useState('false')
   const [roadDistance, setRoadDistance] = useState('');
   const [productIds, setProductIds] = React.useState({
     catId: '',
     subCatId: '',
-    subSubCatId: '',
+    subSubCatId: ''
   });
 
   useFocusEffect(
@@ -114,13 +116,11 @@ const ProductScreen = ({navigation, route: {params}}) => {
   );
 
   const _getUserCurrentLocation = async () => {
-    const userCurrentLocation = await AsyncStorage.getItem(
-      'userCurrentLocation',
-    );
-    setCurr(JSON.parse(userCurrentLocation));
+    const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
+    setCurr(JSON.parse(userCurrentLocation))
     const addressChanged = await AsyncStorage.getItem('addressChange');
-    setAddressChange(addressChanged);
-  };
+    setAddressChange(addressChanged)
+  }
 
   const getUserAddress = async () => {
     const userLocation = JSON.parse(
@@ -130,33 +130,26 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const getProductDetail = async () => {
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     // params?.wishlist ? params?.item?.product_id : params?.item?.id,->params?.tenantMetadata?.product_id
-    let productID =
-      (params?.wishlist ? params?.item?.product_id : params?.item?.id) ||
-      params?.item?.tenantMetadata?.product_id;
-    console.log('Product ID =>> ' + productID);
+    let productID = (params?.wishlist ? params?.item?.product_id : params?.item?.id) || params?.item?.tenantMetadata?.product_id;
+    console.log("Product ID =>> " + productID);
     const response = await axios.get(
       `${BASE_URL}/product-detail/${productID}?user_id=${id}&device_id=${global.deviceId}`,
     );
 
-    console.log(
-      'Here is the Response of Product Details -> ' +
-        JSON.stringify(response?.data),
-    );
+    console.log("Here is the Response of Product Details -> " + JSON.stringify(response?.data));
     setProductDetail(response.data);
     getRoadDistance(response.data);
     setIsFav(response.data?.is_wishlist);
     // setIsBag(response.data?.is_bag);
-    console.log(
-      'This is the response of data ==> ' + response.data?.is_wishlist,
-    );
+    console.log("This is the response of data ==> " + response.data?.is_wishlist);
     let tempArray = response?.data?.product?.feature;
-    console.log('Length => ' + tempArray.length);
+    console.log("Length => " + tempArray.length);
     setProductIds({
       catId: response.data?.product?.cat_id,
       subCatId: response.data?.product?.subcat_id,
-      subSubCatId: response.data?.product?.subsubcat_id,
+      subSubCatId: response.data?.product?.subsubcat_id
     });
     setFeature(tempArray);
   };
@@ -174,26 +167,27 @@ const ProductScreen = ({navigation, route: {params}}) => {
   const getSimilarProd = async pageNum => {
     if (isLoading || !hasMoreData) return;
     setIsLoading(true);
-    console.log('params data is here => ' + JSON.stringify(params.item));
+    console.log("params data is here => " + JSON.stringify(params.item));
 
     const body = {
       page: pageNum - 1,
       cat_id: productIds.catId,
       subcat_id: productIds.subCatId,
       subsubcat_id: productIds.subSubCatId,
-      seller_id: params?.item?.tenantMetadata?.seller_id
-        ? params?.item?.tenantMetadata?.seller_id
-        : params?.item?.seller_id,
+      seller_id: params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id,
       // ...(params.item.tags && {tags: params.item.tags}),
       // ...(params.item.cat_id && { cat_id: params.item.cat_id }),
       // ...(params.item.subcat_id !== null && { subcat_id: params.item.subcat_id }),
       // ...(params.item.subsubcat_id !== null && { subsubcat_id: params.item.subsubcat_id }),
       // ...(params.item.brandname !== null && { brandname: params.item.brandname }),
     };
-    console.log('Here is the Body! bla bla=>> ' + JSON.stringify(body));
-    const response = await axios.post(`${BASE_URL}/product-list`, body);
-    console.log('Here is the response => ' + JSON.stringify(response));
-    console.log('Here is the response  afdsfasg => ' + global.sellerId);
+    console.log("Here is the Body! bla bla=>> " + JSON.stringify(body));
+    const response = await axios.post(
+      `${BASE_URL}/product-list`,
+      body,
+    );
+    console.log("Here is the response => " + JSON.stringify(response));
+    console.log("Here is the response  afdsfasg => " + global.sellerId);
     if (response.status === 200) {
       setImageBase(global.imageThumbPath);
       if (response.data.product.data.length > 0) {
@@ -210,32 +204,26 @@ const ProductScreen = ({navigation, route: {params}}) => {
 
   const updateWishList = async () => {
     const savedToken = await AsyncStorage.getItem('token');
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     if (savedToken) {
       const headers = {
         Authorization: `Bearer ${savedToken}`,
       };
       const body = {
-        ...(isFav && {
-          id: productDetail?.wishlist_id > 0 && productDetail?.wishlist_id,
-        }),
-        ...(!isFav && {
-          product_id: params.item?.tenantMetadata?.product_id
-            ? params.item?.tenantMetadata?.product_id
-            : params.item?.id,
-        }),
+        ...(isFav && { id: productDetail?.wishlist_id > 0 && productDetail?.wishlist_id }),
+        ...(!isFav && { product_id: params.item?.tenantMetadata?.product_id ? params.item?.tenantMetadata?.product_id : params.item?.id }),
         user_id: id,
         device_id: global.deviceId,
       };
-      console.log('Wishlist ID ==> ' + JSON.stringify(body));
+      console.log("Wishlist ID ==> " + JSON.stringify(body));
       const response = await axios.post(
         `${BASE_URL}/add-remove-wish-list`,
         body,
-        {headers},
+        { headers },
       );
       if (response.data.status_code == 200) {
-        getCount();
-        setIsFav(!isFav);
+        getCount()
+        setIsFav(!isFav)
         // dispatch({ type: 'BAG_COUNT', payload: {wish_list_count:wishListData.length - 1} });
       }
     } else {
@@ -244,13 +232,13 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const getCount = async () => {
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     const body = {
       user_id: id,
       device_id: global.deviceId,
     };
     const response = await axios.post(`${BASE_URL}/counting`, body);
-    dispatch({type: 'BAG_COUNT', payload: response.data});
+    dispatch({ type: 'BAG_COUNT', payload: response.data });
   };
 
   const addToBag = async () => {
@@ -264,7 +252,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
             navigation.navigate('BagScreen');
           } else {
             // const savedToken = await AsyncStorage.getItem('token')
-            const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+            const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
             // if (savedToken) {
             const headers = {
               Authorization: `Bearer ${savedToken}`,
@@ -272,25 +260,19 @@ const ProductScreen = ({navigation, route: {params}}) => {
             };
             var imagePath = ``;
             if (params.searchItem === true) {
-              const imageEndURL = params?.item?.imageUrls[0]
-                ? params?.item?.imageUrls[0]
-                : params?.item?.image;
-              imagePath = `${global.imageThumbPath}/${imageEndURL}`;
+              const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
+              imagePath = `${global.imageThumbPath}/${imageEndURL}`
             } else {
-              imagePath = `${global.imageThumbPath}${params?.item?.seller_id}/${params?.item?.image}`;
+              imagePath = `${global.imageThumbPath}${params?.item?.seller_id}/${params?.item?.image}`
             }
-            console.log(
-              'This is the image going to the backend  => ' + imagePath,
-            );
+            console.log("This is the image going to the backend  => " + imagePath);
             // const sellerID = params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id;
             // const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
             // ${imageBase}/${params?.item?.seller_id}/${params?.item?.image}
             const body = {
               user_id: id,
               device_id: global.deviceId,
-              product_id: params?.item?.tenantMetadata?.product_id
-                ? params?.item?.tenantMetadata?.product_id
-                : params?.item?.id,
+              product_id: params?.item?.tenantMetadata?.product_id ? params?.item?.tenantMetadata?.product_id : params?.item?.id,
               product_image: imagePath,
               qty: 1,
               options: {
@@ -302,7 +284,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
               },
               distance: 25,
               shipping_charge: 10,
-              delivery_time: roadDistance,
+              delivery_time: roadDistance
             };
             console.log('bodyAddCart ==>> ', body);
             const response = await axios.post(`${BASE_URL}/add-in-cart`, body, {
@@ -310,7 +292,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
             });
             if (response.data.status_code == 200) {
               getCount();
-              setIsBag(true);
+              setIsBag(true)
               // getCartData();
             }
 
@@ -327,20 +309,20 @@ const ProductScreen = ({navigation, route: {params}}) => {
     }
   };
 
-  const renderSubCategory = ({item}) => (
+  const renderSubCategory = ({ item }) => (
     <TouchableOpacity
-      onPress={() => navigation.push('ProductScreen', {item: item})}
-      style={{marginRight: 5, marginLeft: 8}}>
+      onPress={() => navigation.push('ProductScreen', { item: item })}
+      style={{ marginRight: 5, marginLeft: 8 }}>
       <Image
-        style={{width: responsiveWidth(190), height: responsiveWidth(240)}}
-        source={{uri: `${imageBase}${item.seller_id}/${item.image}`}}
+        style={{ width: responsiveWidth(190), height: responsiveWidth(240) }}
+        source={{ uri: `${imageBase}${item.seller_id}/${item.image}` }}
       />
-      <View style={{width: responsiveWidth(190), padding: 5}}>
+      <View style={{ width: responsiveWidth(190), padding: 5 }}>
         <Text style={styles.itemName}>{item.brandname}</Text>
         <Text style={styles.subtitle}>{item.name}</Text>
-        <View style={{flexDirection: 'row', width: '84%'}}>
+        <View style={{ flexDirection: 'row', width: '84%' }}>
           <Text style={styles.itemName}>₹{parseInt(item.sellprice)}</Text>
-          <Text style={[styles.subtitle, {textDecorationLine: 'line-through'}]}>
+          <Text style={[styles.subtitle, { textDecorationLine: 'line-through' }]}>
             {' '}
             ₹{parseInt(item.costprice)}
           </Text>
@@ -350,7 +332,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     </TouchableOpacity>
   );
 
-  const ServiceComp = ({uri, txt}) => (
+  const ServiceComp = ({ uri, txt }) => (
     <View
       style={{
         alignItems: 'center',
@@ -358,7 +340,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
         width: 98,
         borderWidth: 0,
       }}>
-      <Image style={{width: 43, height: 39, margin: 15}} source={uri} />
+      <Image style={{ width: 43, height: 39, margin: 15 }} source={uri} />
       <Text
         numberOfLines={2}
         style={{
@@ -379,7 +361,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     return (
       <View
         key={index}
-        style={{backgroundColor: '#F3F3F6', padding: 10, marginTop: 10}}>
+        style={{ backgroundColor: '#F3F3F6', padding: 10, marginTop: 10 }}>
         <View
           style={{
             flexDirection: 'row',
@@ -397,12 +379,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
           </Text>
           {isActive ? (
             <Image
-              style={{height: 5, width: 10}}
+              style={{ height: 5, width: 10 }}
               source={require('../../assets/upB.png')}
             />
           ) : (
             <Image
-              style={{height: 6, width: 10}}
+              style={{ height: 6, width: 10 }}
               source={require('../../assets/Home/down.png')}
             />
           )}
@@ -411,14 +393,9 @@ const ProductScreen = ({navigation, route: {params}}) => {
     );
   };
 
-  const renderDetails = ({item}) => {
+  const renderDetails = ({ item }) => {
     return (
-      <View
-        style={{
-          backgroundColor: '#f1f1f170',
-          paddingHorizontal: 10,
-          paddingBottom: 5,
-        }}>
+      <View style={{ backgroundColor: '#f1f1f170', paddingHorizontal: 10, paddingBottom: 5 }}>
         <Text
           style={{
             fontSize: 12,
@@ -429,9 +406,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
           }}>
           {Object.keys(item) == 'vendorArticleNumber'
             ? 'Vendor Article Number'
-            : Object.keys(item) == 'vendorArticleName'
-            ? 'Vendor Article Name'
-            : Object.keys(item)}
+            : Object.keys(item) == 'vendorArticleName' ? 'Vendor Article Name' : Object.keys(item)}
         </Text>
         <Text
           style={{
@@ -447,9 +422,9 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const _renderContent = () => {
-    const renderDetails = ({item}) => {
+    const renderDetails = ({ item }) => {
       return (
-        <View style={{backgroundColor: '#F3F3F6', padding: 10}}>
+        <View style={{ backgroundColor: '#F3F3F6', padding: 10 }}>
           <Text
             style={{
               fontSize: 12,
@@ -485,7 +460,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     setActiveSections(activeSections);
   };
 
-  const renderAddresses = ({item}) => (
+  const renderAddresses = ({ item }) => (
     <AddressContainer
       onPress={async () => {
         setCurrentLocation(item);
@@ -542,11 +517,11 @@ const ProductScreen = ({navigation, route: {params}}) => {
     }
   }
 
-  const getRoadDistance = async productDetail => {
+  const getRoadDistance = async (productDetail) => {
     const userLocation = JSON.parse(
       await AsyncStorage.getItem('userCurrentLocation'),
     );
-    const {Latitude, Longitude} = userLocation;
+    const { Latitude, Longitude } = userLocation;
     const destinationlat = productDetail?.product?.Latitude;
     const destinationlong = productDetail?.product?.Longitude;
     const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${Latitude},${Longitude}&destinations=${destinationlat},${destinationlong}&key=${Google_Api_Key}`;
@@ -556,6 +531,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
       const distanceValue = response.data.rows[0].elements[0].distance.value; // distance in meters
       const distanceKm = distanceValue / 1000;
       console.log('-=-distanceValue-=-', distanceValue);
+
 
       let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
 
@@ -571,21 +547,13 @@ const ProductScreen = ({navigation, route: {params}}) => {
       const nowDate = new Date();
       const hour = nowDate.getHours().toString().padStart(2, '0');
       const minute = nowDate.getMinutes().toString().padStart(2, '0');
-      const currentTime = `${hour}:${minute}:00`;
+      const currentTime = `${hour}:${minute}:00`
 
-      let timeDiff = isTimeBetween(
-        currentTime,
-        productDetail?.product?.workinng_start_time,
-        productDetail?.product?.workinng_end_time,
-      );
+      let timeDiff = isTimeBetween(currentTime, productDetail?.product?.workinng_start_time, productDetail?.product?.workinng_end_time)
 
       if (timeDiff) {
         // Alert.alert('with in time')
-        setRoadDistance(
-          `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(
-            0,
-          )} minutes`,
-        );
+        setRoadDistance(`Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`)
       } else {
         // setRoadDistance(`Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`)
         // Alert.alert('after close warehouse')
@@ -602,10 +570,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
         }
         // const tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
 
-        const time = moment(
-          productDetail?.product?.workinng_start_time,
-          'HH:mm:ss',
-        );
+        const time = moment(productDetail?.product?.workinng_start_time, 'HH:mm:ss');
         time.add(travelTimeMinutes, 'minutes');
         const newTime = time.format('HH:mm A');
         // , ${distanceKm.toFixed(0)} km
@@ -615,9 +580,9 @@ const ProductScreen = ({navigation, route: {params}}) => {
       console.error('Error fetching distance:', error);
       return null;
     }
-  };
+  }
 
-  console.log('productDetail?.size_chart', productDetail?.size_chart);
+  console.log("productDetail?.size_chart", productDetail?.size_chart);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -628,12 +593,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
             data={subCategoryData}
             renderItem={renderSubCategory}
             numColumns={2}
-            style={{borderWidth: 0}}
+            style={{ borderWidth: 0 }}
             keyExtractor={(item, index) => index + ''}
             ListHeaderComponent={() => (
               <>
-                <SimpleCarousel productDetail={productDetail} />
-                <View style={{padding: 10, marginBottom: 0}}>
+                <CarouselComp productDetail={productDetail} />
+                <View style={{ padding: 10, marginBottom: 0 }}>
                   <Text
                     style={{
                       fontSize: 14,
@@ -709,12 +674,10 @@ const ProductScreen = ({navigation, route: {params}}) => {
                       Select Size
                     </Text>
                     <TouchableOpacity
-                      onPress={() =>
-                        setSizeModal(productDetail?.size_chart ? true : false)
-                      }
-                      style={{flexDirection: 'row', alignItems: 'center'}}>
+                      onPress={() => setSizeModal(productDetail?.size_chart ? true : false)}
+                      style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Image
-                        style={{height: 20, width: 20, marginRight: 5}}
+                        style={{ height: 20, width: 20, marginRight: 5 }}
                         source={require('../../assets/measuring.png')}
                       />
                       <Text
@@ -730,7 +693,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={{flexDirection: 'row', marginBottom: 16}}>
+                  <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                     {productSize.map(item => (
                       <TouchableOpacity
                         onPress={() => setSelectedSize(item)}
@@ -751,8 +714,8 @@ const ProductScreen = ({navigation, route: {params}}) => {
                             item?.qty == 0
                               ? 'lightgray'
                               : selectedSize.name == item.name
-                              ? 'white'
-                              : 'grey',
+                                ? 'white'
+                                : 'grey',
                         }}>
                         {item?.qty == 0 && <View style={styles.cutLine}></View>}
                         <Text
@@ -761,8 +724,8 @@ const ProductScreen = ({navigation, route: {params}}) => {
                               item?.qty == 0
                                 ? 'lightgray'
                                 : selectedSize.name == item.name
-                                ? 'white'
-                                : '#111111',
+                                  ? 'white'
+                                  : '#111111',
                             fontSize: 12,
                             fontWeight: '400',
                             fontFamily: 'Poppins',
@@ -790,12 +753,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
                         marginRight: 10,
                       }}>
                       <Image
-                        style={{height: 14, width: 10}}
+                        style={{ height: 14, width: 10 }}
                         source={require('../../assets/marker.png')}
                       />
                     </View>
-                    <View style={{flexGrow: 1}}>
-                      <View style={{flexDirection: 'row'}}>
+                    <View style={{ flexGrow: 1 }}>
+                      <View style={{ flexDirection: 'row' }}>
                         <TouchableOpacity
                           // onPress={async() => {await AsyncStorage.setItem('fromScreen','bag');navigation.navigate('SearchLocation')}}
                           style={{
@@ -804,11 +767,9 @@ const ProductScreen = ({navigation, route: {params}}) => {
                             borderWidth: 0,
                             width: '96%',
                           }}>
-                          <Text
-                            style={[styles.headerTitle, {width: '100%'}]}
-                            numberOfLines={1}>
+                          <Text style={[styles.headerTitle, { width: '100%' }]} numberOfLines={1}>
                             Delivery to{' '}
-                            <Text style={{fontWeight: 'bold'}}>
+                            <Text style={{ fontWeight: 'bold' }}>
                               {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                                 && addressDetail?.data[0]?.address
                                 : curr?.address} */}
@@ -823,8 +784,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                           fontWeight: '400',
                           fontFamily: 'Poppins',
                           color: '#64646D',
-                        }}>
-                        {roadDistance}
+                        }}>{roadDistance}
                       </Text>
                     </View>
                   </View>
@@ -851,11 +811,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                     />
                   </View>
                   <View
-                    style={{
-                      backgroundColor: '#F3F3F6',
-                      padding: 10,
-                      marginTop: 10,
-                    }}>
+                    style={{ backgroundColor: '#F3F3F6', padding: 10, marginTop: 10 }}>
                     <View
                       style={{
                         flexDirection: 'row',
@@ -865,7 +821,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                       <Text
                         style={{
                           fontSize: 16,
-                          fontWeight: '900',
+                          fontWeight: "900",
                           fontFamily: 'Poppins-Medium',
                           color: '#333',
                         }}>
@@ -873,52 +829,43 @@ const ProductScreen = ({navigation, route: {params}}) => {
                       </Text>
                     </View>
                   </View>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      backgroundColor: '#F3F3F6',
-                      justifyContent: 'flex-start',
-                    }}>
-                    {feature?.map((item, index) => (
-                      <View
-                        key={index}
-                        style={{
-                          width: '43%', // Adjust the width for grid-like view (3 columns per row)
-                          height: 50,
-                          backgroundColor: '#F3F3F6',
-                          margin: 5, // Add margin for spacing
-                          padding: 7,
-                        }}>
-                        <Text
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", backgroundColor: '#F3F3F6', justifyContent: "flex-start" }}>
+                    {
+                      feature?.map((item, index) => (
+                        <View
+                          key={index}
                           style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Poppins-Bold',
-                            color: '#111111',
-                            marginBottom: 5,
-                            textAlign: 'left',
+                            width: "43%", // Adjust the width for grid-like view (3 columns per row)
+                            height: 50,
+                            backgroundColor: '#F3F3F6',
+                            margin: 5, // Add margin for spacing
+                            padding: 7
                           }}>
-                          {Object.keys(item)[0] === 'vendorArticleNumber'
-                            ? 'VENDOR ARTICLE NUMBER'
-                            : Object.keys(item)[0].toUpperCase()}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            fontWeight: '400',
-                            fontFamily: 'Poppins-Medium',
-                            color: '#111111',
-                            textAlign: 'left',
-                          }}>
-                          {Object.values(item)[0]
-                            ? Object.values(item)[0].length > 15
-                              ? Object.values(item)[0].substring(0, 15) + '...'
-                              : Object.values(item)[0]
-                            : null}
-                        </Text>
-                      </View>
-                    ))}
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "bold",
+                              fontFamily: 'Poppins-Bold',
+                              color: '#111111',
+                              marginBottom: 5, textAlign: "left"
+                            }}>
+                            {Object.keys(item)[0] === 'vendorArticleNumber'
+                              ? 'VENDOR ARTICLE NUMBER'
+                              : Object.keys(item)[0].toUpperCase()}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: '400',
+                              fontFamily: 'Poppins-Medium',
+                              color: '#111111',
+                              textAlign: "left"
+                            }}>
+                            {Object.values(item)[0] ? Object.values(item)[0].length > 15 ? Object.values(item)[0].substring(0, 15) + '...' : Object.values(item)[0] : null}
+                          </Text>
+                        </View>
+                      ))
+                    }
                   </View>
                   <Text
                     style={{
@@ -934,7 +881,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                 </View>
               </>
             )}
-            onEndReached={({distanceFromEnd}) => {
+            onEndReached={({ distanceFromEnd }) => {
               if (distanceFromEnd > 0.1) {
                 handleLoadMore();
               }
@@ -975,7 +922,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
               onPress={() => addToBag()}
               title={isBag ? 'Go to Bag' : 'Add to Bag'}
               img={require('../../assets/bagW.png')}
-              imgStyle={{width: 14, height: 14, marginRight: 5}}
+              imgStyle={{ width: 14, height: 14, marginRight: 5 }}
               width={'45%'}
               color={'#111111'}
               txtColor={'#FFFFFF'}
@@ -994,27 +941,18 @@ const ProductScreen = ({navigation, route: {params}}) => {
         }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <TouchableOpacity
-              onPress={() => setSizeModal(false)}
-              style={{borderWidth: 0, alignSelf: 'flex-end'}}>
-              <View
-                style={{
-                  height: 35,
-                  width: 35,
-                  borderRadius: 25,
-                  borderWidth: 1.5,
-                  borderColor: 'black',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
-                <Text style={{fontWeight: 'bold'}}>X</Text>
+            <TouchableOpacity onPress={() => setSizeModal(false)} style={{ borderWidth: 0, alignSelf: "flex-end" }}>
+              <View style={{ height: 35, width: 35, borderRadius: 25, borderWidth: 1.5, borderColor: "black", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ fontWeight: "bold" }}>
+                  X
+                </Text>
               </View>
             </TouchableOpacity>
             <Image
-              style={{height: 220, width: '100%'}}
-              resizeMode="center"
-              resizeMethod="scale"
-              source={{uri: productDetail?.size_chart}}
+              style={{ height: 220, width: "100%" }}
+              resizeMode='center'
+              resizeMethod='scale'
+              source={{ uri: productDetail?.size_chart }}
             />
           </View>
         </View>
@@ -1036,11 +974,11 @@ const ProductScreen = ({navigation, route: {params}}) => {
                 justifyContent: 'space-between',
                 margin: 5,
               }}>
-              <Text style={[styles.headerTitle, {fontSize: 16}]}>
+              <Text style={[styles.headerTitle, { fontSize: 16 }]}>
                 Select Delivery Address
               </Text>
               <Text
-                style={{alignSelf: 'flex-end'}}
+                style={{ alignSelf: 'flex-end' }}
                 onPress={() => setAddListModal(false)}>
                 X
               </Text>
@@ -1128,7 +1066,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontFamily: 'Poppins',
     color: '#111111',
-    width: '60%',
+    width: '60%'
   },
   itemName: {
     fontSize: 12,
@@ -1177,6 +1115,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 1,
     backgroundColor: 'lightgray',
-    transform: [{rotate: '-40deg'}],
-  },
+    transform: [{ rotate: '-40deg' }]
+  }
 });
