@@ -1327,32 +1327,39 @@ const BagScreen = ({ navigation }) => {
                     <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Credit/Debit Card, Netbanking, UPI</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setSelected(0)}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-evenly',
-                    width: '90%',
-                    borderColor: selected == 0 ? '#000000' : '#00000033',
-                    borderWidth: 1,
-                    padding: 10,
-                    alignSelf: 'center',
-                    marginBottom: 15,
-                  }}>
-                  <View
-                    style={{
-                      height: 30,
-                      width: 30,
-                      borderRadius: 15,
-                      borderWidth: 1,
-                      borderColor: selected == 0 ? '#000000' : '#00000033',
-                      backgroundColor: selected == 0 ? '#000000' : '#FFFFFF',
-                    }}></View>
-                  <View>
-                    <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay on delivery</Text>
-                    <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Cash or UPI to the delivery partner</Text>
-                  </View>
-                </TouchableOpacity>
+                {cartData.length > 0 ?
+                  <>
+                    {cartData.some((item) => item.seller_id === 6) ? null :
+                      <TouchableOpacity
+                        onPress={() => setSelected(0)}
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-evenly',
+                          width: '90%',
+                          borderColor: selected == 0 ? '#000000' : '#00000033',
+                          borderWidth: 1,
+                          padding: 10,
+                          alignSelf: 'center',
+                          marginBottom: 15,
+                        }}>
+                        <View
+                          style={{
+                            height: 30,
+                            width: 30,
+                            borderRadius: 15,
+                            borderWidth: 1,
+                            borderColor: selected == 0 ? '#000000' : '#00000033',
+                            backgroundColor: selected == 0 ? '#000000' : '#FFFFFF',
+                          }}></View>
+                        <View>
+                          <Text style={{ fontFamily: 'Poppins-Medium', color: '#333' }}>Pay on delivery</Text>
+                          <Text style={{ fontFamily: 'Poppins-Regular', color: '#999' }}>Cash or UPI to the delivery partner</Text>
+                        </View>
+                      </TouchableOpacity>
+                    }
+                  </>
+                  : null}
+
                 <CreateOrderButton />
               </View>
             </View>

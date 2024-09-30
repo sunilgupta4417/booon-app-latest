@@ -32,7 +32,6 @@ const CarouselComp = ({productDetail}) => {
     })
     .slice(0, 6);
 
-  console.log(uniqueArray, 'uniqueArray9347934wiwiweuewi');
   return (
     <View style={{marginBottom: 10}}>
       <Carousel

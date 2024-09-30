@@ -90,29 +90,30 @@ export default PastOrder = () => {
     const validateForm = () => {
         let valid = true;
         let newErrors = {};
+        if(selectedItem?.payment_mode == 0){
+            // Bank Account Name Validation (should not contain numbers)
+            if (!/^[A-Za-z\s]+$/.test(bankAccountName)) {
+                newErrors.bankAccountName = 'Account name should only contain letters.';
+                valid = false;
+            }
 
-        // Bank Account Name Validation (should not contain numbers)
-        if (!/^[A-Za-z\s]+$/.test(bankAccountName)) {
-            newErrors.bankAccountName = 'Account name should only contain letters.';
-            valid = false;
-        }
+            // Bank Account Number Validation (should only contain digits)
+            if (!/^\d+$/.test(bankAccountNumber)) {
+                newErrors.bankAccountNumber = 'Account number should only contain digits.';
+                valid = false;
+            }
 
-        // Bank Account Number Validation (should only contain digits)
-        if (!/^\d+$/.test(bankAccountNumber)) {
-            newErrors.bankAccountNumber = 'Account number should only contain digits.';
-            valid = false;
-        }
+            // Bank Name Validation (should not contain numbers or special characters)
+            if (!/^[A-Za-z\s]+$/.test(bankName)) {
+                newErrors.bankName = 'Bank name should only contain letters.';
+                valid = false;
+            }
 
-        // Bank Name Validation (should not contain numbers or special characters)
-        if (!/^[A-Za-z\s]+$/.test(bankName)) {
-            newErrors.bankName = 'Bank name should only contain letters.';
-            valid = false;
-        }
-
-        // IFSC Code Validation (should be 4 letters followed by 7 digits)
-        if (!/^[A-Za-z]{4}\d{7}$/.test(bankIFSC)) {
-            newErrors.bankIFSC = 'Invalid IFSC code format.';
-            valid = false;
+            // IFSC Code Validation (should be 4 letters followed by 7 digits)
+            if (!/^[A-Za-z]{4}\d{7}$/.test(bankIFSC)) {
+                newErrors.bankIFSC = 'Invalid IFSC code format.';
+                valid = false;
+            }
         }
 
         // Return Description Validation (should not be empty)
@@ -262,7 +263,7 @@ export default PastOrder = () => {
                         </View>
                         <Text style={[styles.nameTxt]}>
                             ₹{item?.product_price}{' '}
-                            <Text
+                            {/* <Text
                                 style={{
                                     fontWeight: '400',
                                     color: '#64646D99',
@@ -270,8 +271,8 @@ export default PastOrder = () => {
                                 }}>
                                 {' '}
                                 ₹{item?.product_subtotal}{' '}
-                            </Text>{' '}
-                            <Text style={{ color: '#5EB160' }}> 40% OFF</Text>
+                            </Text>{' '} */}
+                            {/* <Text style={{ color: '#5EB160' }}> 40% OFF</Text> */}
                         </Text>
                         {item?.is_return && item?.order_status === 4 ?
                             <TouchableOpacity style={{ alignSelf: 'flex-start', marginTop: 5, paddingHorizontal: 20, backgroundColor: 'transparent', borderColor: "black", borderWidth: 1, borderRadius: 30, alignItems: 'center', paddingVertical: 5 }}
@@ -314,7 +315,7 @@ export default PastOrder = () => {
                         >
                             <Text style={{ fontSize: 20, fontFamily: "Poppins-Bold" }}>x</Text>
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 20, marginBottom: 10, textAlign: 'center' }}>Bank Form</Text>
+                        <Text style={{ fontSize: 20, marginBottom: 10, textAlign: 'center' }}>Return Details</Text>
 
                         {/* Quantity Dropdown */}
                         <Text style={{ marginBottom: 5 }}>Select you Qty:</Text>
@@ -340,47 +341,52 @@ export default PastOrder = () => {
                             />
                         </TouchableOpacity>
 
-                        {/* Bank Account Name */}
-                        <Text style={{ marginBottom: 5 }}>Bank Account Name:</Text>
-                        <TextInput
-                            value={bankAccountName}
-                            onChangeText={setBankAccountName}
-                            placeholder="Enter Account Name"
-                            style={{ borderWidth: 1, borderColor: errors.bankAccountName ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
-                        />
-                        {errors.bankAccountName && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankAccountName}</Text>}
+                        {selectedItem?.payment_mode == 0 ?
+                            <View>
+                                {/* Bank Account Name */}
+                                <Text style={{ marginBottom: 5 }}>Bank Account Name:</Text>
+                                <TextInput
+                                    value={bankAccountName}
+                                    onChangeText={setBankAccountName}
+                                    placeholder="Enter Account Name"
+                                    style={{ borderWidth: 1, borderColor: errors.bankAccountName ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
+                                />
+                                {errors.bankAccountName && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankAccountName}</Text>}
 
-                        {/* Bank Account Number */}
-                        <Text style={{ marginBottom: 5 }}>Bank Account Number:</Text>
-                        <TextInput
-                            value={bankAccountNumber}
-                            onChangeText={setBankAccountNumber}
-                            placeholder="Enter Account Number"
-                            keyboardType="numeric"
-                            maxLength={16}
-                            style={{ borderWidth: 1, borderColor: errors.bankAccountNumber ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
-                        />
-                        {errors.bankAccountNumber && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankAccountNumber}</Text>}
+                                {/* Bank Account Number */}
+                                <Text style={{ marginBottom: 5 }}>Bank Account Number:</Text>
+                                <TextInput
+                                    value={bankAccountNumber}
+                                    onChangeText={setBankAccountNumber}
+                                    placeholder="Enter Account Number"
+                                    keyboardType="numeric"
+                                    maxLength={16}
+                                    style={{ borderWidth: 1, borderColor: errors.bankAccountNumber ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
+                                />
+                                {errors.bankAccountNumber && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankAccountNumber}</Text>}
 
-                        {/* Bank Name */}
-                        <Text style={{ marginBottom: 5 }}>Bank Name:</Text>
-                        <TextInput
-                            value={bankName}
-                            onChangeText={setBankName}
-                            placeholder="Enter Bank Name"
-                            style={{ borderWidth: 1, borderColor: errors.bankName ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
-                        />
-                        {errors.bankName && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankName}</Text>}
+                                {/* Bank Name */}
+                                <Text style={{ marginBottom: 5 }}>Bank Name:</Text>
+                                <TextInput
+                                    value={bankName}
+                                    onChangeText={setBankName}
+                                    placeholder="Enter Bank Name"
+                                    style={{ borderWidth: 1, borderColor: errors.bankName ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
+                                />
+                                {errors.bankName && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankName}</Text>}
 
-                        {/* Bank IFSC Code */}
-                        <Text style={{ marginBottom: 5 }}>Bank IFSC Code:</Text>
-                        <TextInput
-                            value={bankIFSC}
-                            onChangeText={setBankIFSC}
-                            placeholder="Enter IFSC Code"
-                            style={{ borderWidth: 1, borderColor: errors.bankIFSC ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
-                        />
-                        {errors.bankIFSC && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankIFSC}</Text>}
+                                {/* Bank IFSC Code */}
+                                <Text style={{ marginBottom: 5 }}>Bank IFSC Code:</Text>
+                                <TextInput
+                                    value={bankIFSC}
+                                    onChangeText={setBankIFSC}
+                                    placeholder="Enter IFSC Code"
+                                    style={{ borderWidth: 1, borderColor: errors.bankIFSC ? 'red' : '#ccc', borderRadius: 5, padding: 8, marginBottom: 5 }}
+                                />
+                                {errors.bankIFSC && <Text style={{ color: 'red', marginBottom: 10 }}>{errors.bankIFSC}</Text>}
+                            </View>
+                            : null}
+
 
                         {/* Return Description */}
                         <Text style={{ marginBottom: 5 }}>Return Description:</Text>

@@ -120,7 +120,7 @@ const Account = ({ navigation }) => {
         </View>
         <Text style={[styles.nameTxt]}>
           ₹{item?.product_price}{' '}
-          <Text
+          {/* <Text
             style={{
               fontWeight: '400',
               color: '#64646D99',
@@ -128,11 +128,11 @@ const Account = ({ navigation }) => {
             }}>
             {' '}
             ₹{item?.product_subtotal}{' '}
-          </Text>{' '}
-          <Text style={{ color: '#5EB160' }}> 40% OFF</Text>
+          </Text>{' '} */}
+          {/* <Text style={{ color: '#5EB160' }}> 40% OFF</Text> */}
         </Text>
         {item?.customer_tracking_url &&
-          <TouchableOpacity style={{ alignSelf: 'flex-end', paddingHorizontal: 20, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 10 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
+          <TouchableOpacity style={{ alignSelf: 'flex-start', paddingHorizontal: 20, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 10 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
             <Text style={{ color: '#fff' }}>Track Order</Text>
           </TouchableOpacity>}
       </View>
@@ -168,10 +168,10 @@ const Account = ({ navigation }) => {
           renderItem={renderLiveOrderItem}
           ListHeaderComponent={() => (
             <>
-              {userDetail?.fname && userDetail?.mobile && userDetail?.emailid ? (
+              {orderData.length > 0 ? (
                 <>
                   <Text style={styles.liveOrderTxt}>Live Orders</Text>
-                  <View style={styles.profileView}>
+                  {/* <View style={styles.profileView}>
                     <Text style={styles.nameTxt}>
                       {userDetail?.fname} {userDetail?.lname}
                     </Text>
@@ -183,7 +183,7 @@ const Account = ({ navigation }) => {
                     <TouchableOpacity style={styles.editView}>
                       <Text style={styles.editTxt}>Edit</Text>
                     </TouchableOpacity>
-                  </View>
+                  </View> */}
                 </>
               ) : null}</>
           )}

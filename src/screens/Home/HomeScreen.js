@@ -456,7 +456,7 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       <View style={{ weight: width / 1.8, justifyContent: "center", paddingLeft: 5, borderColor: "gray", }}>
-        <Text style={{ fontFamily: "Poppins-Bold", fontSize: 12, textAlign: "left", width: width / 1.8 }}>1 style, Ketch Slim fit black will reach you in 60 mins.</Text>
+        <Text style={{ fontFamily: "Poppins-Bold", fontSize: 12, textAlign: "left", width: width / 1.8 }}>Want to know where your order is? Tap to track it now!</Text>
       </View>
       <View style={{ paddingHorizontal: 5, justifyContent: "flex-end", paddingBottom: 10, borderBottom: 1, borderColor: "gray", }}>
         <TouchableOpacity disabled={!item?.customer_tracking_url ? true : false} style={{ alignSelf: "flex-end", width: width / 2.5, paddingHorizontal: 40, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 6 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
