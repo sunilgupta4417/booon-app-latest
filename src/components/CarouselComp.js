@@ -31,7 +31,7 @@ const CarouselComp = ({productDetail}) => {
       }
     })
     .slice(0, 6);
-
+ 
   return (
     <View style={{marginBottom: 10}}>
       <Carousel
