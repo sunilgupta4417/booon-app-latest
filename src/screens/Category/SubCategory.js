@@ -260,6 +260,32 @@ const SubCategory = ({ navigation, route: { params } }) => {
     </TouchableOpacity>
   );
 
+  // Roman numeral conversion function
+  const romanToDecimal = (roman) => {
+    const romanNumerals = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+    let result = 0, i;
+    for (i in romanNumerals) {
+      while (roman.indexOf(i) === 0) {
+        result += romanNumerals[i];
+        roman = roman.replace(i, '');
+      }
+    }
+    return result;
+  };
+
+  // Function to sort sizes
+  const sortSizes = (sizes) => {
+    const sizeMap = { XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, '3XL': 7, '4XL': 8, '5XL': 9, '6XL': 10 };
+    const numericSizes = sizes.filter(size => !isNaN(size.name)).map(size => parseInt(size.name));
+    const romanSizes = sizes.filter(size => sizeMap[size.name] || size.name.includes('XL'));
+    numericSizes.sort((a, b) => a - b);
+    romanSizes.sort((a, b) => sizeMap[a.name] - sizeMap[b.name]);
+    return [
+      ...numericSizes.map(size => ({ name: size.toString() })),
+      ...romanSizes
+    ];
+  };
+
   const getFilter = async () => {
     let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
     if (params?.cat_id) {
@@ -280,6 +306,8 @@ const SubCategory = ({ navigation, route: { params } }) => {
 
     const res = await axios.get(url);
     if (res?.data) {
+      const sortedSizes = sortSizes(res?.data?.size);
+      res.data.size = sortedSizes;
       setFilterData(res?.data);
     }
     let filterObjToData = Object.keys(res?.data);

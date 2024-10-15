@@ -4,7 +4,7 @@ import WebView from 'react-native-webview';
 import CustomHeader from './CustomHeader';
 import {BASE_URL} from '../config';
 import axios from 'axios';
-const WebViewComp = ({navigation, route: {params}}) => {
+const WebViewComp = ({navigation, route: {params}}) => { 
   const [html, setHtml] = useState('<p></p>');
    const [loading,setLoading] = useState(true)
 

@@ -67,14 +67,24 @@ const BagScreen = ({ navigation }) => {
   const [totalItemCount, setTotalItemCount] = useState({});
   const [isFav, setIsFav] = useState(false);
   const [productDetail, setProductDetail] = useState(null);
+  const [generalSetting, setGeneralSetting] = useState(null);
 
   useEffect(() => {
     getCartData();
     getUserAddress();
     getCouponCodeList();
-    getShippingCharges()
+    getShippingCharges();
+    generalSettings();
     // _getUserCurrentLocation()
   }, []);
+
+  const generalSettings = async () => {
+    const response = await axios.get(`${BASE_URL}/general-setting`);
+    if (response.data.status_code == 200) {
+      global.imageThumbPath = response.data.data.thum_image
+      setGeneralSetting(response.data.data);
+    }
+  };
 
   const getUserAddress = async () => {
     const userLocation = JSON.parse(
@@ -269,24 +279,29 @@ const BagScreen = ({ navigation }) => {
   const dynamicDeliveryTime = (distance, workStartTime, workEndTime) => {
     console.log("Coming distance is =>> " + '\n' + distance + '\n' + workStartTime + '\n' + workEndTime);
     let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
+
     if (distance > 20) {
-      const extraDistance = distance - 20;
+      const extraDistance = distance - 15; // Additional time only for km over 15 km
       const additionalTime = extraDistance * 8; // 8 minutes per km over 15 km
       travelTimeMinutes += additionalTime;
     }
+
     const hours = Math.floor(travelTimeMinutes / 60);
     const minutes = travelTimeMinutes % 60;
+
     // Check order time
     const nowDate = new Date();
     const hour = nowDate.getHours().toString().padStart(2, '0');
     const minute = nowDate.getMinutes().toString().padStart(2, '0');
-    const currentTime = `${hour}:${minute}:00`
+    const currentTime = `${hour}:${minute}:00`;
+
     let timeDiff = isTimeBetween(currentTime, workStartTime, workEndTime);
     if (timeDiff) {
       return `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`;
     } else {
       // Get the current hour
       const currentHour = moment().hour();
+
       // Check if the current time is between 12 AM and 6 AM
       let tomorrow;
       if (currentHour >= 0 && currentHour < 6) {
@@ -296,12 +311,14 @@ const BagScreen = ({ navigation }) => {
         // If current time is outside 12 AM to 6 AM, add a day
         tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
       }
+
       const time = moment(workStartTime, 'HH:mm:ss');
       time.add(travelTimeMinutes, 'minutes');
       const newTime = time.format('HH:mm A');
-      return `Delivery by ${tomorrow} at ${newTime}`
+      return `Delivery by ${tomorrow} at ${newTime}`;
     }
-  }
+  };
+
 
   const cartProductView = ({ item, index }) => (
     <View style={[styles.row, { width: "100%", borderWidth: 0, marginVertical: 10 }]}>
@@ -603,27 +620,14 @@ const BagScreen = ({ navigation }) => {
           Authorization: `Bearer ${savedToken}`,
         };
         const response = await axios.get(`${BASE_URL}/profile`, { headers });
-        const id = await DeviceInfo.getUniqueId();
         const { fname, mobile, lname, id: userId } = response.data;
-        const order = totalCartDetail?.data || [];
-        // let subtotal = 0;
-        // let orderTotal = 0;
-        // order.map(item => {
-        //   subtotal = subtotal + item?.sellprice * item?.quantity;
-
-        //   orderTotal =
-        //     orderTotal + item?.sellprice * item?.quantity + item?.ShippingCharge;
-        // });
-
         const typePayment = selected == 0 ? '2' : '1';
-
         const myHeaders = new Headers();
         // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         myHeaders.append('Authorization', `Bearer ${savedToken}`);
-
+        console.log("Token => " + JSON.stringify(myHeaders));
         const urlencoded = new FormData();
         urlencoded.append('user_id', userId);
-        // urlencoded.append('device_id', id);
         urlencoded.append('device_id', global.deviceId);
         urlencoded.append('first_name', fname);
         urlencoded.append('last_name', lname);
@@ -631,8 +635,8 @@ const BagScreen = ({ navigation }) => {
         urlencoded.append('landmark', userLocation.landmark || '');
         urlencoded.append('city', userLocation.city);
         urlencoded.append('state', userLocation.state);
-        urlencoded.append('zipcode', userLocation.zipcode);
-        urlencoded.append('country', userLocation.city);
+        urlencoded.append('zipcode', userLocation.zipcode === null ? '' : userLocation.zipcode);
+        urlencoded.append('country', 'India');
         urlencoded.append('shipping_charge', shippingCharges);
         urlencoded.append('order_subtotal', totalSP - 20);
         urlencoded.append('order_totals', totalSP);
@@ -645,98 +649,79 @@ const BagScreen = ({ navigation }) => {
         urlencoded.append('shipping_buil_flat_no', userLocation.address);
         urlencoded.append('shipping_street_add', userLocation.address);
         urlencoded.append('mobile', mobile);
-        // urlencoded.append('user_id', '178');
-        // urlencoded.append('device_id', global.deviceId);
-
+        // urlencoded.append('order_options', { "coupon": { "coupon_code": "", "coupon_type": "discount", "coupon_amount": 0 } });
+        console.log("Order or Create order => " + JSON.stringify(urlencoded));
         const requestOptions = {
           method: 'POST',
           headers: myHeaders,
           body: urlencoded,
           redirect: 'follow',
         };
+        console.log("Result-0 =>> ");
+          fetch(BASE_URL + '/create-order', requestOptions)
+            .then(response => response.json())
+            .then((result) => {
+              console.log("Result-1 =>> " + JSON.stringify(result));
+              if (selected === 1) {
+                // callPaymentScreen(result?.order_ids[0], orderTotal, savedToken);
+                console.log("Result-2 =>> " + JSON.stringify(result));
+                const myHeaderPay = new Headers();
+                myHeaderPay.append("Accept", "application/json");
+                // myHeaderPay.append("Content-Type", "application/x-www-form-urlencoded");
+                myHeaderPay.append("Authorization", `Bearer ${savedToken}`);
+                console.log("OBJ ==> " + JSON.stringify({
+                  "order_id": result?.order_ids[0].toString(),
+                  "amount": totalSP.toString()
+                }));
+                const urlencodedPay = new FormData();
+                urlencodedPay.append("order_id", result?.order_ids[0]);
+                urlencodedPay.append("amount", totalSP);
+                urlencodedPay.append('user_id', userId);
+                const requestConfig = {
+                  method: "POST",
+                  headers: myHeaderPay,
+                  body: urlencodedPay,
+                  redirect: "follow"
+                };
 
-        fetch(BASE_URL + '/create-order', requestOptions)
-          .then(response => response.json())
-          .then((result) => {
-            if (selected === 1) {
-              // callPaymentScreen(result?.order_ids[0], orderTotal, savedToken);
-
-              const myHeaderPay = new Headers();
-              myHeaderPay.append("Accept", "application/json");
-              // myHeaderPay.append("Content-Type", "application/x-www-form-urlencoded");
-              myHeaderPay.append("Authorization", `Bearer ${savedToken}`);
-
-              console.log("OBJ ==> " + JSON.stringify({
-                "order_id": result?.order_ids[0].toString(),
-                "amount": totalSP.toString()
-              }));
-
-              const urlencodedPay = new FormData();
-              urlencodedPay.append("order_id", result?.order_ids[0]);
-              urlencodedPay.append("amount", totalSP);
-              urlencodedPay.append('user_id', userId);
-
-              const requestConfig = {
-                method: "POST",
-                headers: myHeaderPay,
-                body: urlencodedPay,
-                redirect: "follow"
-              };
-
-              fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
-                .then((response) => response.json())
-                .then((result) => {
-                  console.log("Amount Result ==> " + JSON.stringify(result));
-                  navigation.navigate('WebViewPage', { response: result });
-                })
-                .catch((error) => console.error(error));
-
-
-
-              // let urlencoded = new FormData();
-              // urlencoded.append('order_id', result?.order_ids[0]);
-              // urlencoded.append('amount', orderTotal);
-              // const myHeadersForPayment = new Headers();
-              // // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-              // myHeadersForPayment.append("Content-Type", "application/x-www-form-urlencoded");
-              // myHeadersForPayment.append('Authorization', `Bearer ${savedToken}`);
-
-              // const requestOptions = {
-              //   method: 'POST',
-              //   headers: myHeadersForPayment,
-              //   body: urlencoded,
-              //   redirect: 'follow',
-              // };
-
-              // fetch(`${BASE_URL}/ccavenue-order`, requestOptions)
-              //   .then(response => response.json())
-              //   .then(result => {
-              //     console.log("Amount Result ==> " + JSON.stringify(result));
-              //     navigation.navigate('WebViewPage', { response: result });
-              //   })
-              //   .catch(error => console.error(error));
-              setLoading(false);
-            } else {
-              if (result) {
-                navigation.replace('OrderSuccess', {
-                  payload: urlencoded,
-                  orderResponse: result,
-                  DeleiveryTime: DeleiveryTime
-                });
+                fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
+                  .then((response) => response.json())
+                  .then((result) => {
+                    console.log("Result-3 =>> " + JSON.stringify(result));
+                    console.log("Amount Result ==> " + JSON.stringify(result));
+                    setPayModeModal(false);
+                    navigation.navigate('WebViewPage', { response: result });
+                  })
+                  .catch((error) => console.error(error));
+                setPayModeModal(false);
+                setLoading(false);
               } else {
-                Alert.alert('Something went wrong');
+                console.log("Result-4 =>> ");
+                if (result) {
+                  console.log("Result-5 =>> ");
+                  setPayModeModal(false);
+                  navigation.replace('OrderSuccess', {
+                    payload: urlencoded,
+                    orderResponse: result,
+                    DeleiveryTime: DeleiveryTime
+                  });
+                } else {
+                  console.log("Result-6 =>> ");
+                  Alert.alert('Something went wrong');
+                  setPayModeModal(false);
+                }
+                setLoading(false);
+                setPayModeModal(false);
               }
+            })
+            .catch(error => {
+              console.error("error is Order Create => " + JSON.stringify(error.message));
+              setPayModeModal(false);
               setLoading(false);
-            }
-          })
-          .catch(error => {
-            console.error(error);
-            setLoading(false);
-          });
+            });
       } else {
         Alert.alert('Some selected products are not in service area, Please choose another address.');
       }
-
     };
     return (
       <ButtonComp
@@ -1148,24 +1133,18 @@ const BagScreen = ({ navigation }) => {
             <View
               style={{
                 flexDirection: 'row',
-                width: '95%',
+                width: '100%',
                 justifyContent: 'space-evenly',
                 borderWidth: 0,
                 alignSelf: 'center',
                 marginBottom: 15,
               }}>
-              <ServiceComp
-                txt={'24 hrs to return, no questions'}
-                uri={require('../../assets/Home/clock.png')}
-              />
-              <ServiceComp
-                txt={'Cash on Delivery Available'}
-                uri={require('../../assets/Home/cash.png')}
-              />
-              <ServiceComp
-                txt={'Free Shipping Above ₹500'}
-                uri={require('../../assets/Home/delivery.png')}
-              />
+              {generalSetting?.setting.map(item => (
+                <ServiceComp
+                  txt={item.icon}
+                  uri={{ uri: item.title }}
+                />
+              ))}
             </View>
           </ScrollView>
           <View

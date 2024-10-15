@@ -231,7 +231,8 @@ function Stacks() {
             <Stack.Screen
                 name="PastOrder"
                 component={PastOrder}
-                options={{ headerShown: true, title: "Past Orders" }}
+                options={{ headerShown: false }}
+            // options={{headerBackTitle:'back', headerShown: true, title: "Past Orders" }}
             />
         </Stack.Navigator>
     );
@@ -260,7 +261,6 @@ function App() {
 }
 
 const styles = StyleSheet.create({
-
 });
 
 export default App;

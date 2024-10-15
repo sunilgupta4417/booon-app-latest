@@ -122,7 +122,7 @@ const SearchLocation = ({ navigation }) => {
       const response = await axios.get(url);
       if (response.data?.result) {
         const postalCode = response.data?.result?.address_components.find(component => component?.types.includes("postal_code"))?.long_name;
-        return {...response.data?.result?.geometry, zipcode:postalCode || ''};
+        return { ...response.data?.result?.geometry, zipcode: postalCode || '' };
       } else {
         return false;
       }
@@ -172,7 +172,7 @@ const SearchLocation = ({ navigation }) => {
         } else {
           ids = sellerNearMe.join(',');
         }
-        if(ids == '' || ids == undefined){
+        if (ids == '' || ids == undefined) {
           setShow(false)
           setNoLocation(true)
           return;
@@ -263,7 +263,7 @@ const SearchLocation = ({ navigation }) => {
           ids = sellerNearMe.join(',');
         }
 
-        if(ids == '' || ids == undefined){
+        if (ids == '' || ids == undefined) {
           setShow(false)
           setNoLocation(true)
           return;
@@ -350,7 +350,7 @@ const SearchLocation = ({ navigation }) => {
           ids = sellerNearMe.join(',');
         }
 
-        if(ids == '' || ids == undefined){
+        if (ids == '' || ids == undefined) {
           setShow(false)
           setNoLocation(true)
           return;
@@ -408,6 +408,7 @@ const SearchLocation = ({ navigation }) => {
           paddingHorizontal: 10,
           fontWeight: '500',
           fontSize: 15,
+          color:"black"
         }}>
         {item.description}
       </Text>
@@ -426,7 +427,7 @@ const SearchLocation = ({ navigation }) => {
           ref={inputSearchRef}
           onChangeText={handleInputChange}
           placeholder="Try HSR Layout / Raj Residency / etc."
-          style={styles.txtIp}
+          style={[styles.txtIp, { color: "black" }]}
         />
       </View>
       <TouchableOpacity
@@ -492,9 +493,9 @@ const SearchLocation = ({ navigation }) => {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <View style={{backgroundColor:'#fff',width:'90%',padding:30,borderRadius:4,alignItems:'center'}}>
-            <Text style={{fontSize:16,color:'#333',fontFamily:'Poppins'}}>No Style found on selected Location</Text>
-            <TouchableOpacity onPress={()=>setNoLocation(false)} style={{backgroundColor:'#000',width:'50%',borderRadius:30,padding:15,marginTop:30,alignItems:'center'}}><Text style={{fontSize:16,color:'#fff',fontFamily:'Poppins'}}>Change Location</Text></TouchableOpacity>
+          <View style={{ backgroundColor: '#fff', width: '90%', padding: 30, borderRadius: 4, alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, color: '#333', fontFamily: 'Poppins' }}>No Style found on selected Location</Text>
+            <TouchableOpacity onPress={() => setNoLocation(false)} style={{ backgroundColor: '#000', width: '50%', borderRadius: 30, padding: 15, marginTop: 30, alignItems: 'center' }}><Text style={{ fontSize: 16, color: '#fff', fontFamily: 'Poppins' }}>Change Location</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>

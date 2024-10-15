@@ -90,7 +90,7 @@ export default PastOrder = () => {
     const validateForm = () => {
         let valid = true;
         let newErrors = {};
-        if(selectedItem?.payment_mode == 0){
+        if (selectedItem?.payment_mode == 0) {
             // Bank Account Name Validation (should not contain numbers)
             if (!/^[A-Za-z\s]+$/.test(bankAccountName)) {
                 newErrors.bankAccountName = 'Account name should only contain letters.';
@@ -288,6 +288,7 @@ export default PastOrder = () => {
 
     return (
         <SafeAreaView>
+            <CustomHeader back title={"Past Order"} />
             {orderData.length > 0 ?
                 <FlatList
                     data={orderData}

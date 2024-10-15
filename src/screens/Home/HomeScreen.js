@@ -385,55 +385,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-  const renderWearItem = ({ item, index }) => (
-    <WearComp
-      title={item.title}
-      subtitle={item.sub_title}
-      img={item.image}
-      subsubCatData={item.data}
-      index={index}
-      direction={index % 2 === 0 ? 'row' : 'row-reverse'}
-    />
-  );
-
-  const ShareButton = ({ url, txt, color, type, navigate }) => (
-    <TouchableOpacity
-      onPress={() => navigateOnApp(type, txt)}
-      style={{
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-        width: '100%',
-        borderRadius: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 4,
-        marginBottom: 10,
-      }}>
-      <Image
-        style={{
-          height: 24,
-          width: 24,
-          backgroundColor: color,
-          margin: 5,
-          marginHorizontal: 10,
-          borderRadius: 12,
-        }}
-        source={url}
-      />
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: '400',
-          lineHeight: 21,
-          fontFamily: 'Poppins',
-          color: '#ffffff',
-          marginHorizontal: 10,
-        }}>
-        {navigate}
-      </Text>
-    </TouchableOpacity>
-  );
-
   const navigateSearch = async () => {
     await AsyncStorage.setItem('fromScreen', 'home')
     navigation.navigate('SearchLocation')
@@ -732,17 +683,14 @@ const HomeScreen = ({ navigation }) => {
                 justifyContent: 'center',
                 borderWidth: 0,
                 width: 100
-                // marginHorizontal: responsiveWidth(15),
               }}>
               <Image
                 style={{ width: 40, height: 40, resizeMode: 'contain' }}
                 source={{ uri: item.title }}
               />
               <Text
-                numberOfLines={2}
                 style={{
                   fontSize: 14,
-                  // fontWeight: '400',
                   alignSelf: 'center',
                   textAlign: 'center',
                   lineHeight: 16,

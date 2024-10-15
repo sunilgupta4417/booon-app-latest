@@ -14,23 +14,23 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
-import Carousel, {Pagination} from 'react-native-snap-carousel';
-import {responsiveHeight, responsiveWidth} from '../../utils';
+import React, { useCallback, useEffect, useState } from 'react';
+import Carousel, { Pagination } from 'react-native-snap-carousel';
+import { responsiveHeight, responsiveWidth } from '../../utils';
 import ButtonComp from '../../components/ButtonComp';
 import Accordion from 'react-native-collapsible/Accordion';
 import CustomHeader from '../../components/CustomHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import {BASE_URL, Google_Api_Key} from '../../config';
+import { BASE_URL, Google_Api_Key } from '../../config';
 import CarouselComp from '../../components/CarouselComp';
-import {useFocusEffect} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
-import {AddressContainer} from '../../components/AddressContainer';
-import {useDispatch} from 'react-redux';
-const {width: viewportWidth, height} = Dimensions.get('window');
-import {useQuery} from '@tanstack/react-query';
-import {getAddressList} from '../../hooks/hook';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { AddressContainer } from '../../components/AddressContainer';
+import { useDispatch } from 'react-redux';
+const { width: viewportWidth, height } = Dimensions.get('window');
+import { useQuery } from '@tanstack/react-query';
+import { getAddressList } from '../../hooks/hook';
 import moment from 'moment';
 import SimpleCarousel from '../../components/SimpleCarousel';
 
@@ -55,9 +55,9 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.sin(dLon / 2) *
-      Math.sin(dLon / 2) *
-      Math.cos(radLat1) *
-      Math.cos(radLat2);
+    Math.sin(dLon / 2) *
+    Math.cos(radLat1) *
+    Math.cos(radLat2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   // Distance in kilometers
@@ -66,14 +66,14 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return distance;
 }
 
-const ProductScreen = ({navigation, route: {params}}) => {
-  const {data: addressDetail, isLoading: addressLoading} = useQuery({
+const ProductScreen = ({ navigation, route: { params } }) => {
+  const { data: addressDetail, isLoading: addressLoading } = useQuery({
     queryKey: ['address'],
     queryFn: getAddressList,
   });
 
   const dispatch = useDispatch();
-  const {addressList} = useSelector(state => state.Cart);
+  const { addressList } = useSelector(state => state.Cart);
   const SECTIONS = [
     {
       title: 'Product Details',
@@ -97,6 +97,8 @@ const ProductScreen = ({navigation, route: {params}}) => {
   const [addListModal, setAddListModal] = useState(false);
   const [addressChange, setAddressChange] = useState('false');
   const [roadDistance, setRoadDistance] = useState('');
+  const [kilometers, setKilometers] = useState('');
+  const [generalSetting, setGeneralSetting] = useState(null);
   const [productIds, setProductIds] = React.useState({
     catId: '',
     subCatId: '',
@@ -106,12 +108,21 @@ const ProductScreen = ({navigation, route: {params}}) => {
   useFocusEffect(
     useCallback(async () => {
       getCount();
+      await generalSettings();
       await getUserAddress();
       await _getUserCurrentLocation();
       await getProductDetail();
       setIsBag(false);
     }, []),
   );
+
+  const generalSettings = async () => {
+    const response = await axios.get(`${BASE_URL}/general-setting`);
+    if (response.data.status_code == 200) {
+      global.imageThumbPath = response.data.data.thum_image
+      setGeneralSetting(response.data.data);
+    }
+  };
 
   const _getUserCurrentLocation = async () => {
     const userCurrentLocation = await AsyncStorage.getItem(
@@ -130,7 +141,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const getProductDetail = async () => {
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     // params?.wishlist ? params?.item?.product_id : params?.item?.id,->params?.tenantMetadata?.product_id
     let productID =
       (params?.wishlist ? params?.item?.product_id : params?.item?.id) ||
@@ -142,7 +153,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
 
     console.log(
       'Here is the Response of Product Details -> ' +
-        JSON.stringify(response?.data),
+      JSON.stringify(response?.data),
     );
     setProductDetail(response.data);
     getRoadDistance(response.data);
@@ -210,7 +221,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
 
   const updateWishList = async () => {
     const savedToken = await AsyncStorage.getItem('token');
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     if (savedToken) {
       const headers = {
         Authorization: `Bearer ${savedToken}`,
@@ -231,7 +242,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
       const response = await axios.post(
         `${BASE_URL}/add-remove-wish-list`,
         body,
-        {headers},
+        { headers },
       );
       if (response.data.status_code == 200) {
         getCount();
@@ -244,18 +255,18 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const getCount = async () => {
-    const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+    const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
     const body = {
       user_id: id,
       device_id: global.deviceId,
     };
     const response = await axios.post(`${BASE_URL}/counting`, body);
-    dispatch({type: 'BAG_COUNT', payload: response.data});
+    dispatch({ type: 'BAG_COUNT', payload: response.data });
   };
 
   const addToBag = async () => {
     try {
-      if (selectedSize) {
+      if (selectedSize || productSize.length == 0) {
         const savedToken = await AsyncStorage.getItem('token');
         setToken(savedToken);
         if (savedToken) {
@@ -264,7 +275,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
             navigation.navigate('BagScreen');
           } else {
             // const savedToken = await AsyncStorage.getItem('token')
-            const {id} = JSON.parse(await AsyncStorage.getItem('userData'));
+            const { id } = JSON.parse(await AsyncStorage.getItem('userData'));
             // if (savedToken) {
             const headers = {
               Authorization: `Bearer ${savedToken}`,
@@ -279,9 +290,6 @@ const ProductScreen = ({navigation, route: {params}}) => {
             } else {
               imagePath = `${global.imageThumbPath}${params?.item?.seller_id}/${params?.item?.image}`;
             }
-            console.log(
-              'This is the image going to the backend  => ' + imagePath,
-            );
             // const sellerID = params?.item?.tenantMetadata?.seller_id ? params?.item?.tenantMetadata?.seller_id : params?.item?.seller_id;
             // const imageEndURL = params?.item?.imageUrls[0] ? params?.item?.imageUrls[0] : params?.item?.image;
             // ${imageBase}/${params?.item?.seller_id}/${params?.item?.image}
@@ -300,7 +308,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                 EAN: selectedSize?.size_ean_no,
                 Fabric: productDetail?.product?.fabric,
               },
-              distance: 25,
+              distance: kilometers,
               shipping_charge: 10,
               delivery_time: roadDistance,
             };
@@ -327,20 +335,20 @@ const ProductScreen = ({navigation, route: {params}}) => {
     }
   };
 
-  const renderSubCategory = ({item}) => (
+  const renderSubCategory = ({ item }) => (
     <TouchableOpacity
-      onPress={() => navigation.push('ProductScreen', {item: item})}
-      style={{marginRight: 5, marginLeft: 8}}>
+      onPress={() => navigation.push('ProductScreen', { item: item })}
+      style={{ marginRight: 5, marginLeft: 8 }}>
       <Image
-        style={{width: responsiveWidth(190), height: responsiveWidth(240)}}
-        source={{uri: `${imageBase}${item.seller_id}/${item.image}`}}
+        style={{ width: responsiveWidth(190), height: responsiveWidth(240) }}
+        source={{ uri: `${imageBase}${item.seller_id}/${item.image}` }}
       />
-      <View style={{width: responsiveWidth(190), padding: 5}}>
+      <View style={{ width: responsiveWidth(190), padding: 5 }}>
         <Text style={styles.itemName}>{item.brandname}</Text>
         <Text style={styles.subtitle}>{item.name}</Text>
-        <View style={{flexDirection: 'row', width: '84%'}}>
+        <View style={{ flexDirection: 'row', width: '84%' }}>
           <Text style={styles.itemName}>₹{parseInt(item.sellprice)}</Text>
-          <Text style={[styles.subtitle, {textDecorationLine: 'line-through'}]}>
+          <Text style={[styles.subtitle, { textDecorationLine: 'line-through' }]}>
             {' '}
             ₹{parseInt(item.costprice)}
           </Text>
@@ -350,7 +358,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     </TouchableOpacity>
   );
 
-  const ServiceComp = ({uri, txt}) => (
+  const ServiceComp = ({ uri, txt }) => (
     <View
       style={{
         alignItems: 'center',
@@ -358,7 +366,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
         width: 98,
         borderWidth: 0,
       }}>
-      <Image style={{width: 43, height: 39, margin: 15}} source={uri} />
+      <Image style={{ width: 43, height: 39, margin: 15 }} source={uri} />
       <Text
         numberOfLines={2}
         style={{
@@ -379,7 +387,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     return (
       <View
         key={index}
-        style={{backgroundColor: '#F3F3F6', padding: 10, marginTop: 10}}>
+        style={{ backgroundColor: '#F3F3F6', padding: 10, marginTop: 10 }}>
         <View
           style={{
             flexDirection: 'row',
@@ -397,12 +405,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
           </Text>
           {isActive ? (
             <Image
-              style={{height: 5, width: 10}}
+              style={{ height: 5, width: 10 }}
               source={require('../../assets/upB.png')}
             />
           ) : (
             <Image
-              style={{height: 6, width: 10}}
+              style={{ height: 6, width: 10 }}
               source={require('../../assets/Home/down.png')}
             />
           )}
@@ -411,7 +419,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     );
   };
 
-  const renderDetails = ({item}) => {
+  const renderDetails = ({ item }) => {
     return (
       <View
         style={{
@@ -430,8 +438,8 @@ const ProductScreen = ({navigation, route: {params}}) => {
           {Object.keys(item) == 'vendorArticleNumber'
             ? 'Vendor Article Number'
             : Object.keys(item) == 'vendorArticleName'
-            ? 'Vendor Article Name'
-            : Object.keys(item)}
+              ? 'Vendor Article Name'
+              : Object.keys(item)}
         </Text>
         <Text
           style={{
@@ -447,9 +455,9 @@ const ProductScreen = ({navigation, route: {params}}) => {
   };
 
   const _renderContent = () => {
-    const renderDetails = ({item}) => {
+    const renderDetails = ({ item }) => {
       return (
-        <View style={{backgroundColor: '#F3F3F6', padding: 10}}>
+        <View style={{ backgroundColor: '#F3F3F6', padding: 10 }}>
           <Text
             style={{
               fontSize: 12,
@@ -485,7 +493,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     setActiveSections(activeSections);
   };
 
-  const renderAddresses = ({item}) => (
+  const renderAddresses = ({ item }) => (
     <AddressContainer
       onPress={async () => {
         setCurrentLocation(item);
@@ -546,7 +554,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
     const userLocation = JSON.parse(
       await AsyncStorage.getItem('userCurrentLocation'),
     );
-    const {Latitude, Longitude} = userLocation;
+    const { Latitude, Longitude } = userLocation;
     const destinationlat = productDetail?.product?.Latitude;
     const destinationlong = productDetail?.product?.Longitude;
     const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${Latitude},${Longitude}&destinations=${destinationlat},${destinationlong}&key=${Google_Api_Key}`;
@@ -555,7 +563,8 @@ const ProductScreen = ({navigation, route: {params}}) => {
       const response = await axios.get(url);
       const distanceValue = response.data.rows[0].elements[0].distance.value; // distance in meters
       const distanceKm = distanceValue / 1000;
-      console.log('-=-distanceValue-=-', distanceValue);
+      // console.log('-=-distanceValue-=-', distanceValue);
+      console.log("-=-distanceValue-=-" + '\n' + distanceValue + '\n' + distanceKm);
 
       let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
 
@@ -581,6 +590,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
 
       if (timeDiff) {
         // Alert.alert('with in time')
+        setKilometers(distanceKm);
         setRoadDistance(
           `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(
             0,
@@ -609,6 +619,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
         time.add(travelTimeMinutes, 'minutes');
         const newTime = time.format('HH:mm A');
         // , ${distanceKm.toFixed(0)} km
+        setKilometers(distanceKm);
         setRoadDistance(`Delivery by ${tomorrow} at ${newTime}`);
       }
     } catch (error) {
@@ -628,12 +639,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
             data={subCategoryData}
             renderItem={renderSubCategory}
             numColumns={2}
-            style={{borderWidth: 0}}
+            style={{ borderWidth: 0 }}
             keyExtractor={(item, index) => index + ''}
             ListHeaderComponent={() => (
               <>
                 <SimpleCarousel productDetail={productDetail} />
-                <View style={{padding: 10, marginBottom: 0}}>
+                <View style={{ padding: 10, marginBottom: 0 }}>
                   <Text
                     style={{
                       fontSize: 14,
@@ -694,84 +705,88 @@ const ProductScreen = ({navigation, route: {params}}) => {
                     </Text>
                   </View>
 
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginVertical: 16,
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: Platform.OS == 'android' ? '700' : '500',
-                        color: '#111111',
-                      }}>
-                      Select Size
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() =>
-                        setSizeModal(productDetail?.size_chart ? true : false)
-                      }
-                      style={{flexDirection: 'row', alignItems: 'center'}}>
-                      <Image
-                        style={{height: 20, width: 20, marginRight: 5}}
-                        source={require('../../assets/measuring.png')}
-                      />
-                      <Text
+                  {productSize.length > 0 ?
+                    <>
+                      <View
                         style={{
-                          fontSize: 12,
-                          fontWeight: 'bold',
-                          fontFamily: 'Poppins',
-                          color: '#000000',
-                          textDecorationLine: 'underline',
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          marginVertical: 16,
                         }}>
-                        Size Chart
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={{flexDirection: 'row', marginBottom: 16}}>
-                    {productSize.map(item => (
-                      <TouchableOpacity
-                        onPress={() => setSelectedSize(item)}
-                        disabled={item?.qty == 0}
-                        style={{
-                          borderWidth: 1,
-                          borderRadius: 5,
-                          paddingVertical: 10,
-                          position: 'relative',
-                          width: responsiveWidth(50),
-                          alignItems: 'center',
-                          marginRight: 15,
-                          backgroundColor:
-                            selectedSize.name == item.name
-                              ? '#5EB160'
-                              : 'transparent',
-                          borderColor:
-                            item?.qty == 0
-                              ? 'lightgray'
-                              : selectedSize.name == item.name
-                              ? 'white'
-                              : 'grey',
-                        }}>
-                        {item?.qty == 0 && <View style={styles.cutLine}></View>}
                         <Text
                           style={{
-                            color:
-                              item?.qty == 0
-                                ? 'lightgray'
-                                : selectedSize.name == item.name
-                                ? 'white'
-                                : '#111111',
-                            fontSize: 12,
-                            fontWeight: '400',
-                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: Platform.OS == 'android' ? '700' : '500',
+                            color: '#111111',
                           }}>
-                          {item.name}
+                          Select Size
                         </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                        <TouchableOpacity
+                          onPress={() =>
+                            setSizeModal(productDetail?.size_chart ? true : false)
+                          }
+                          style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Image
+                            style={{ height: 20, width: 20, marginRight: 5 }}
+                            source={require('../../assets/measuring.png')}
+                          />
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 'bold',
+                              fontFamily: 'Poppins',
+                              color: '#000000',
+                              textDecorationLine: 'underline',
+                            }}>
+                            Size Chart
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                        {productSize.map(item => (
+                          <TouchableOpacity
+                            onPress={() => setSelectedSize(item)}
+                            disabled={item?.qty == 0}
+                            style={{
+                              borderWidth: 1,
+                              borderRadius: 5,
+                              paddingVertical: 10,
+                              position: 'relative',
+                              width: responsiveWidth(50),
+                              alignItems: 'center',
+                              marginRight: 15,
+                              backgroundColor:
+                                selectedSize.name == item.name
+                                  ? '#5EB160'
+                                  : 'transparent',
+                              borderColor:
+                                item?.qty == 0
+                                  ? 'lightgray'
+                                  : selectedSize.name == item.name
+                                    ? 'white'
+                                    : 'grey',
+                            }}>
+                            {item?.qty == 0 && <View style={styles.cutLine}></View>}
+                            <Text
+                              style={{
+                                color:
+                                  item?.qty == 0
+                                    ? 'lightgray'
+                                    : selectedSize.name == item.name
+                                      ? 'white'
+                                      : '#111111',
+                                fontSize: 12,
+                                fontWeight: '400',
+                                fontFamily: 'Poppins',
+                              }}>
+                              {item.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </>
+                    : null}
 
                   <View
                     style={{
@@ -790,12 +805,12 @@ const ProductScreen = ({navigation, route: {params}}) => {
                         marginRight: 10,
                       }}>
                       <Image
-                        style={{height: 14, width: 10}}
+                        style={{ height: 14, width: 10 }}
                         source={require('../../assets/marker.png')}
                       />
                     </View>
-                    <View style={{flexGrow: 1}}>
-                      <View style={{flexDirection: 'row'}}>
+                    <View style={{ flexGrow: 1 }}>
+                      <View style={{ flexDirection: 'row' }}>
                         <TouchableOpacity
                           // onPress={async() => {await AsyncStorage.setItem('fromScreen','bag');navigation.navigate('SearchLocation')}}
                           style={{
@@ -805,10 +820,10 @@ const ProductScreen = ({navigation, route: {params}}) => {
                             width: '96%',
                           }}>
                           <Text
-                            style={[styles.headerTitle, {width: '100%'}]}
+                            style={[styles.headerTitle, { width: '100%' }]}
                             numberOfLines={1}>
                             Delivery to{' '}
-                            <Text style={{fontWeight: 'bold'}}>
+                            <Text style={{ fontWeight: 'bold' }}>
                               {/* {addressChange == 'false' ? addressDetail?.data?.length > 0
                                 && addressDetail?.data[0]?.address
                                 : curr?.address} */}
@@ -831,24 +846,18 @@ const ProductScreen = ({navigation, route: {params}}) => {
                   <View
                     style={{
                       flexDirection: 'row',
-                      width: '95%',
+                      width: '100%',
                       justifyContent: 'space-evenly',
                       borderWidth: 0,
                       alignSelf: 'center',
                       marginVertical: 15,
                     }}>
-                    <ServiceComp
-                      txt={'24 hrs to return, no questions'}
-                      uri={require('../../assets/Home/clock.png')}
-                    />
-                    <ServiceComp
-                      txt={'Cash on Delivery Available'}
-                      uri={require('../../assets/Home/cash.png')}
-                    />
-                    <ServiceComp
-                      txt={'Free Shipping Above ₹500'}
-                      uri={require('../../assets/Home/delivery.png')}
-                    />
+                    {generalSetting?.setting.map(item => (
+                      <ServiceComp
+                        txt={item.icon}
+                        uri={{ uri: item.title }}
+                      />
+                    ))}
                   </View>
                   <View
                     style={{
@@ -934,7 +943,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
                 </View>
               </>
             )}
-            onEndReached={({distanceFromEnd}) => {
+            onEndReached={({ distanceFromEnd }) => {
               if (distanceFromEnd > 0.1) {
                 handleLoadMore();
               }
@@ -975,7 +984,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
               onPress={() => addToBag()}
               title={isBag ? 'Go to Bag' : 'Add to Bag'}
               img={require('../../assets/bagW.png')}
-              imgStyle={{width: 14, height: 14, marginRight: 5}}
+              imgStyle={{ width: 14, height: 14, marginRight: 5 }}
               width={'45%'}
               color={'#111111'}
               txtColor={'#FFFFFF'}
@@ -996,7 +1005,7 @@ const ProductScreen = ({navigation, route: {params}}) => {
           <View style={styles.modalContainer}>
             <TouchableOpacity
               onPress={() => setSizeModal(false)}
-              style={{borderWidth: 0, alignSelf: 'flex-end'}}>
+              style={{ borderWidth: 0, alignSelf: 'flex-end' }}>
               <View
                 style={{
                   height: 35,
@@ -1007,14 +1016,14 @@ const ProductScreen = ({navigation, route: {params}}) => {
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}>
-                <Text style={{fontWeight: 'bold'}}>X</Text>
+                <Text style={{ fontWeight: 'bold' }}>X</Text>
               </View>
             </TouchableOpacity>
             <Image
-              style={{height: 220, width: '100%'}}
+              style={{ height: 220, width: '100%' }}
               resizeMode="center"
               resizeMethod="scale"
-              source={{uri: productDetail?.size_chart}}
+              source={{ uri: productDetail?.size_chart }}
             />
           </View>
         </View>
@@ -1036,11 +1045,11 @@ const ProductScreen = ({navigation, route: {params}}) => {
                 justifyContent: 'space-between',
                 margin: 5,
               }}>
-              <Text style={[styles.headerTitle, {fontSize: 16}]}>
+              <Text style={[styles.headerTitle, { fontSize: 16 }]}>
                 Select Delivery Address
               </Text>
               <Text
-                style={{alignSelf: 'flex-end'}}
+                style={{ alignSelf: 'flex-end' }}
                 onPress={() => setAddListModal(false)}>
                 X
               </Text>
@@ -1177,6 +1186,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 1,
     backgroundColor: 'lightgray',
-    transform: [{rotate: '-40deg'}],
+    transform: [{ rotate: '-40deg' }],
   },
 });

@@ -17,7 +17,7 @@ import { BASE_URL } from '../../config';
 export default function OrderSuccess({ navigation, route }) {
   const [modalVisible, setModalVisible] = useState(false);
 
-  const routeData = route.params;
+  const routeData = route?.params;
 
   const CancelOrderButton = () => {
     const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function OrderSuccess({ navigation, route }) {
       setLoading(true);
       const savedToken = await AsyncStorage.getItem('token');
       let data = JSON.stringify({
-        'id': routeData.orderResponse.order_ids
+        'id': routeData?.orderResponse.order_ids
       });
       let config = {
         method: 'get',
@@ -252,7 +252,7 @@ export default function OrderSuccess({ navigation, route }) {
             fontSize: 15,
             color: 'rgba(100, 100, 109, 1)',
           }}>
-          You will recieve your styles by {routeData.DeleiveryTime}
+          You will receive your styles by {routeData?.DeleiveryTime}
         </Text>
         <View
           style={{

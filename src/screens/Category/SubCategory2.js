@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  FlatList, 
+  FlatList,
   Image,
   Platform,
   SafeAreaView,
@@ -83,6 +83,63 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     dispatch({ type: 'BAG_COUNT', payload: response.data });
   };
 
+  // Roman numeral conversion function
+  const romanToDecimal = (roman) => {
+    const romanNumerals = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+    let result = 0, i;
+    for (i in romanNumerals) {
+      while (roman.indexOf(i) === 0) {
+        result += romanNumerals[i];
+        roman = roman.replace(i, '');
+      }
+    }
+    return result;
+  };
+
+  // Function to sort sizes
+  // const sortSizes = (sizes) => {
+  //   const sizeMap = { XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, '3XL': 7, '4XL': 8, '5XL': 9, '6XL': 10 };
+  //   const numericSizes = sizes.filter(size => !isNaN(size.name)).map(size => parseInt(size.name));
+  //   const romanSizes = sizes.filter(size => sizeMap[size.name] || size.name.includes('XL'));
+  //   numericSizes.sort((a, b) => a - b);
+  //   romanSizes.sort((a, b) => sizeMap[a.name] - sizeMap[b.name]);
+  //   return [
+  //     ...numericSizes.map(size => ({ name: size.toString() })),
+  //     ...romanSizes
+  //   ];
+  // };
+
+  const sortSizes = (sizes) => {
+    const sizeMap = { XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, '3XL': 7, '4XL': 8, '5XL': 9, '6XL': 10 };
+
+    // Helper function to extract the numeric value from size strings like "10-11Y" or "10Y"
+    const getSizeValue = (size) => {
+      const matches = size.match(/\d+/g);  // Find all digits in the string
+      return matches ? parseInt(matches[0], 10) : 0;  // Return the first matched number
+    };
+
+    // Separate numeric sizes, Roman numeral sizes, and kids' sizes (ending in 'Y')
+    const numericSizes = sizes.filter(size => !isNaN(size.name)).map(size => parseInt(size.name));
+    const romanSizes = sizes.filter(size => sizeMap[size.name] || size.name.includes('XL'));
+    const kidsSizes = sizes.filter(size => size.name.includes('Y'));
+
+    // Sort the numeric sizes
+    numericSizes.sort((a, b) => a - b);
+
+    // Sort the Roman numeral sizes based on the sizeMap
+    romanSizes.sort((a, b) => sizeMap[a.name] - sizeMap[b.name]);
+
+    // Sort kids' sizes by extracting numeric values from the string
+    kidsSizes.sort((a, b) => getSizeValue(a.name) - getSizeValue(b.name));
+
+    // Return the merged sorted array
+    return [
+      ...numericSizes.map(size => ({ name: size.toString() })),  // Convert numeric sizes back to objects
+      ...romanSizes,                                             // Add sorted Roman numeral sizes
+      ...kidsSizes                                               // Add sorted kids' sizes
+    ];
+  };
+
   const getFilter = async () => {
     let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
     if (params?.cat_id) {
@@ -99,6 +156,9 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
     console.log("body of Get filter in mens =>> " + url);
     const res = await axios.get(url);
     if (res?.data) {
+      console.log("Size array => " + JSON.stringify(res?.data?.size));
+      const sortedSizes = sortSizes(res?.data?.size);
+      res.data.size = sortedSizes;
       setFilterData(res?.data);
     }
     let filterObjToData = Object.keys(res?.data);

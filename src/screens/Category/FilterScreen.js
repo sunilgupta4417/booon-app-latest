@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { Provider as PaperProvider, Checkbox } from 'react-native-paper';
 import ButtonComp from '../../components/ButtonComp';
+
+
 const FilterScreen = ({
   data,
   onOnlyClose,
@@ -46,13 +48,42 @@ const FilterScreen = ({
     }
   }, [selectedCategory])
 
+  // Custom Checkbox Component
+  const CustomCheckbox = ({ isChecked, onPress }) => {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={{ flexDirection: 'row', alignItems: 'center', }}
+      >
+        <View style={{
+          width: 24,
+          height: 24,
+          borderWidth: 2,
+          borderColor: '#888',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginRight: 10,
+          borderRadius: 12,
+          backgroundColor: 'transparent'
+        }}>
+          {isChecked && <View style={{
+            width: 12,
+            height: 12,
+            backgroundColor: 'black',
+            borderRadius: 6
+          }} />}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderContent = () => {
     const style = {
       color: '#64646D',
-      fontFamily:'Poppins-Medium'
+      fontFamily: 'Poppins-Medium'
     };
     switch (selectedCategory) {
-      case 'price': 
+      case 'price':
         return (
           <View>
             {[...screenData?.price].map(option => (
@@ -103,7 +134,7 @@ const FilterScreen = ({
                   style={{
                     // fontWeight:
                     //   discount_value == option?.discount_value ? '600' : '400',
-                      fontFamily: discount_value == option?.discount_value ? 'Poppins-SemiBold' : 'Poppins-Medium',
+                    fontFamily: discount_value == option?.discount_value ? 'Poppins-SemiBold' : 'Poppins-Medium',
                     color:
                       discount_value == option?.discount_value
                         ? '#111111'
@@ -120,25 +151,36 @@ const FilterScreen = ({
         return (
           <ScrollView>
             {[...screenData?.size].map(option => (
-              <View key={option?.name} style={styles.option}>
-                <Checkbox
-                  status={size.includes(option?.name) ? 'checked' : 'unchecked'}
-                  // onPress={() => {
-                  //   let sizefilter = [...size]
-                  //   sizefilter.push(option?.name)
-                  //   setsize(sizefilter)
-                  // }}
-                  onPress={() => {
-                    let sizeFilter = [...size]
-                    const sizeIndex = sizeFilter.indexOf(option?.name);
-                    if (sizeIndex !== -1) {
-                      sizeFilter.splice(sizeIndex, 1);
-                    } else {
-                      sizeFilter.push(option?.name);
-                    }
-                    setsize(sizeFilter)
-                  }}
-                />
+              <View key={option?.name} style={[styles.option]}>
+                {Platform.OS === 'ios' ?
+                  <CustomCheckbox
+                    isChecked={size.includes(option?.name) ? true : false}
+                    onPress={() => {
+                      let sizeFilter = [...size]
+                      const sizeIndex = sizeFilter.indexOf(option?.name);
+                      if (sizeIndex !== -1) {
+                        sizeFilter.splice(sizeIndex, 1);
+                      } else {
+                        sizeFilter.push(option?.name);
+                      }
+                      setsize(sizeFilter)
+                    }}
+                  />
+                  :
+                  <Checkbox
+                    status={size.includes(option?.name) ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      let sizeFilter = [...size]
+                      const sizeIndex = sizeFilter.indexOf(option?.name);
+                      if (sizeIndex !== -1) {
+                        sizeFilter.splice(sizeIndex, 1);
+                      } else {
+                        sizeFilter.push(option?.name);
+                      }
+                      setsize(sizeFilter)
+                    }}
+                  />
+                }
                 <Text style={style}>{option?.name}</Text>
               </View>
             ))}
@@ -149,22 +191,40 @@ const FilterScreen = ({
           <ScrollView>
             {[...screenData?.color].map(colors => (
               <View key={colors?.name} style={styles.option}>
-                <Checkbox
-                  status={color.includes(colors?.name) ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    let colorsfilter = [...color];
-                    const colorIndex = colorsfilter.indexOf(colors?.name);
-                    if (colorIndex !== -1) {
-                      // Color is already present, so remove it
-                      colorsfilter.splice(colorIndex, 1);
-                    } else {
-                      // Color is not present, so add it
-                      colorsfilter.push(colors?.name);
-                    }
-                    setcolor(colorsfilter);
-                  }}
-                />
-                <Text style={[style,{justifyContent:'center'}]}>
+                {Platform.OS === 'ios' ?
+                  <CustomCheckbox
+                    isChecked={color.includes(colors?.name) ? true : false}
+                    onPress={() => {
+                      let colorsfilter = [...color];
+                      const colorIndex = colorsfilter.indexOf(colors?.name);
+                      if (colorIndex !== -1) {
+                        // Color is already present, so remove it
+                        colorsfilter.splice(colorIndex, 1);
+                      } else {
+                        // Color is not present, so add it
+                        colorsfilter.push(colors?.name);
+                      }
+                      setcolor(colorsfilter);
+                    }}
+                  />
+                  :
+                  <Checkbox
+                    status={color.includes(colors?.name) ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      let colorsfilter = [...color];
+                      const colorIndex = colorsfilter.indexOf(colors?.name);
+                      if (colorIndex !== -1) {
+                        // Color is already present, so remove it
+                        colorsfilter.splice(colorIndex, 1);
+                      } else {
+                        // Color is not present, so add it
+                        colorsfilter.push(colors?.name);
+                      }
+                      setcolor(colorsfilter);
+                    }}
+                  />
+                }
+                <Text style={[style, { justifyContent: 'center' }]}>
                   {/* <View style={{ backgroundColor: colors?.name.toLowerCase(), width: 30, height: 20,marginRight:10 }}></View> */}
                   {colors?.name}</Text>
               </View>
@@ -177,19 +237,35 @@ const FilterScreen = ({
           <ScrollView>
             {[...screenData?.category].map(category => (
               <View key={category?.cat_id} style={styles.option}>
-                <Checkbox
-                  status={subsubcat_id.includes(category?.cat_id) ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    let subsubcatIdFilter = [...subsubcat_id];
-                    const subCatIndex = subsubcatIdFilter.indexOf(category?.cat_id);
-                    if (subCatIndex !== -1) {
-                      subsubcatIdFilter.splice(subCatIndex, 1);
-                    } else {
-                      subsubcatIdFilter.push(category?.cat_id);
-                    }
-                    setsubsubcat_id(subsubcatIdFilter);
-                  }}
-                />
+                {Platform.OS === 'ios' ?
+                  <CustomCheckbox
+                    isChecked={subsubcat_id.includes(category?.cat_id) ? true : false}
+                    onPress={() => {
+                      let subsubcatIdFilter = [...subsubcat_id];
+                      const subCatIndex = subsubcatIdFilter.indexOf(category?.cat_id);
+                      if (subCatIndex !== -1) {
+                        subsubcatIdFilter.splice(subCatIndex, 1);
+                      } else {
+                        subsubcatIdFilter.push(category?.cat_id);
+                      }
+                      setsubsubcat_id(subsubcatIdFilter);
+                    }}
+                  />
+                  :
+                  <Checkbox
+                    status={subsubcat_id.includes(category?.cat_id) ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      let subsubcatIdFilter = [...subsubcat_id];
+                      const subCatIndex = subsubcatIdFilter.indexOf(category?.cat_id);
+                      if (subCatIndex !== -1) {
+                        subsubcatIdFilter.splice(subCatIndex, 1);
+                      } else {
+                        subsubcatIdFilter.push(category?.cat_id);
+                      }
+                      setsubsubcat_id(subsubcatIdFilter);
+                    }}
+                  />
+                }
                 <Text style={style}>{category?.name}</Text>
               </View>
             ))}
@@ -200,21 +276,37 @@ const FilterScreen = ({
           <ScrollView>
             {[...screenData?.brand].map(brand => (
               <View key={brand?.brandname} style={styles.option}>
-                <Checkbox
-                  status={
-                    brandname.includes(brand?.brandname) ? 'checked' : 'unchecked'
-                  }
-                  onPress={() => {
-                    let brandFilter = [...brandname]
-                    const brandIndex = brandFilter.indexOf(brand?.brandname);
-                    if (brandIndex !== -1) {
-                      brandFilter.splice(brandIndex, 1);
-                    } else {
-                      brandFilter.push(brand?.brandname);
+                {Platform.OS === 'ios' ?
+                  <CustomCheckbox
+                    isChecked={brandname.includes(brand?.brandname) ? true : false}
+                    onPress={() => {
+                      let brandFilter = [...brandname]
+                      const brandIndex = brandFilter.indexOf(brand?.brandname);
+                      if (brandIndex !== -1) {
+                        brandFilter.splice(brandIndex, 1);
+                      } else {
+                        brandFilter.push(brand?.brandname);
+                      }
+                      setbrandname(brandFilter);
+                    }}
+                  />
+                  :
+                  <Checkbox
+                    status={
+                      brandname.includes(brand?.brandname) ? 'checked' : 'unchecked'
                     }
-                    setbrandname(brandFilter);
-                  }}
-                />
+                    onPress={() => {
+                      let brandFilter = [...brandname]
+                      const brandIndex = brandFilter.indexOf(brand?.brandname);
+                      if (brandIndex !== -1) {
+                        brandFilter.splice(brandIndex, 1);
+                      } else {
+                        brandFilter.push(brand?.brandname);
+                      }
+                      setbrandname(brandFilter);
+                    }}
+                  />
+                }
                 <Text style={style}>{brand?.brandname}</Text>
               </View>
             ))}
@@ -225,6 +317,7 @@ const FilterScreen = ({
         return <View />;
     }
   };
+
   const onComplete = () => {
     const payload = {
       brandname,
