@@ -91,6 +91,7 @@ const BagScreen = ({ navigation }) => {
       await AsyncStorage.getItem('userCurrentLocation'),
     );
     const addressChanged = await AsyncStorage.getItem('addressChange');
+    console.log("I'm coming from address change",addressChange)
     console.log('-=-=addressChanged-=-=', userLocation);
 
     setaddressChange(addressChanged)
@@ -622,6 +623,7 @@ const BagScreen = ({ navigation }) => {
         };
         const response = await axios.get(`${BASE_URL}/profile`, { headers });
         const { fname, mobile, lname, id: userId } = response.data;
+        console.log(fname,lname);
         const typePayment = selected == 0 ? '2' : '1';
         const myHeaders = new Headers();
         // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');

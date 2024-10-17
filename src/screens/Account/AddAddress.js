@@ -46,6 +46,9 @@ const AddAddress = ({navigation, route: {params}}) => {
   useEffect(() => {
     if (userAddress) {
       setAddress(userAddress?.address);
+     // setFirstName(userAddress?.firstname);
+      setLastName(userAddress?.lastname);
+      setFlat(userAddress?.flat_no);
       setCity(userAddress?.city);
       setState(userAddress?.state);
       setPinCode(userAddress?.pincode);
@@ -72,9 +75,10 @@ const AddAddress = ({navigation, route: {params}}) => {
         Latitude,
         Longitude,
       } = addressDetails;
-      // setName(firstname + ' ' + lastname);
+       setName(firstname);
       setMobile(mobile);
       setAddress(address);
+      setLastName(lastname);
       setCity(city);
       setState(state);
       setPinCode(zipcode);
