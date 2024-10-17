@@ -47,7 +47,7 @@ const AddAddress = ({navigation, route: {params}}) => {
     if (userAddress) {
       setAddress(userAddress?.address);
      // setFirstName(userAddress?.firstname);
-      setLastName(userAddress?.lastname);
+      // setLastName(userAddress?.lastname);
       setFlat(userAddress?.flat_no);
       setCity(userAddress?.city);
       setState(userAddress?.state);

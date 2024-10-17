@@ -208,11 +208,12 @@ const HomeScreen = ({ navigation }) => {
     // }
     const userCurrentLocation = await AsyncStorage.getItem('userCurrentLocation');
     const addressChanged = await AsyncStorage.getItem('addressChange');
-    // console.log("Stored location of the user  =>> " + userCurrentLocation);
+    console.log("Stored location of the user  =>> " + userCurrentLocation);
     // console.log("Stored addressChange of the user  =>> " + addressChange);
-    id = JSON.parse(userCurrentLocation)
-    global.sellerId = sellerId
-    //global.sellerId = id.sellerId
+    const { id } = JSON.parse(userCurrentLocation)
+    console.log("Fetch Seller ID is => " + id);
+    // global.sellerId = sellerId
+    global.sellerId = id;
     setaddressChange(addressChanged)
     setCurrentLocation(JSON.parse(userCurrentLocation))
   }
@@ -236,7 +237,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.overlayWhite}>
           <Text style={styles.subtitle}>{item.title}</Text>
           <Text style={styles.subtitle2}>{item.detail}</Text>
-         
+
           <View
             style={{
               borderWidth: 1,

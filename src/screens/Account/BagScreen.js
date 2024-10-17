@@ -68,6 +68,7 @@ const BagScreen = ({ navigation }) => {
   const [isFav, setIsFav] = useState(false);
   const [productDetail, setProductDetail] = useState(null);
   const [generalSetting, setGeneralSetting] = useState(null);
+  const [tempAddField, setTempAddField] = useState('');
 
   useEffect(() => {
     getCartData();
@@ -91,7 +92,7 @@ const BagScreen = ({ navigation }) => {
       await AsyncStorage.getItem('userCurrentLocation'),
     );
     const addressChanged = await AsyncStorage.getItem('addressChange');
-    console.log("I'm coming from address change",addressChange)
+    console.log("I'm coming from address change", addressChange)
     console.log('-=-=addressChanged-=-=', userLocation);
 
     setaddressChange(addressChanged)
@@ -295,29 +296,38 @@ const BagScreen = ({ navigation }) => {
     const hour = nowDate.getHours().toString().padStart(2, '0');
     const minute = nowDate.getMinutes().toString().padStart(2, '0');
     const currentTime = `${hour}:${minute}:00`;
+    const currentCheckTime = moment();
+
 
     let timeDiff = isTimeBetween(currentTime, workStartTime, workEndTime);
-    if (timeDiff) {
+    if (currentCheckTime.isBetween(workStartTime, workEndTime)) {
       return `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`;
     } else {
       // Get the current hour
-      const currentHour = moment().hour();
+      const currentHour = moment();
 
-      // Check if the current time is between 12 AM and 6 AM
       let tomorrow;
-      if (currentHour >= 0 && currentHour < 6) {
-        // If current time is between 12 AM and 6 AM, don't add a day
-        tomorrow = moment().format('DD MMM, YYYY');
-      } else {
-        // If current time is outside 12 AM to 6 AM, add a day
-        tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
-      }
 
+      const startOfDay = moment().startOf('day');
+      const sixAM = moment().startOf('day').add(6, 'hours').format('x');
       const time = moment(workStartTime, 'HH:mm:ss');
       time.add(travelTimeMinutes, 'minutes');
       const newTime = time.format('HH:mm A');
-      return `Delivery at ${newTime}`;
-      //by ${tomorrow}
+
+      console.log("Time is =>> " + startOfDay, sixAM, currentHour.isBetween(moment(startOfDay), moment(sixAM), null, '(]'));
+
+      if (currentHour.isBetween(startOfDay, sixAM)) {
+        tomorrow = moment().format('DD MMM, YYYY');
+        return `Delivery at ${newTime}`;
+      } else {
+        tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
+        return `Delivery by ${tomorrow} at ${newTime}`;
+      }
+
+
+
+
+      // by ${tomorrow}newTime
     }
   };
 
@@ -623,17 +633,17 @@ const BagScreen = ({ navigation }) => {
         };
         const response = await axios.get(`${BASE_URL}/profile`, { headers });
         const { fname, mobile, lname, id: userId } = response.data;
-        console.log(fname,lname);
+        console.log(fname, lname);
         const typePayment = selected == 0 ? '2' : '1';
         const myHeaders = new Headers();
         // myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         myHeaders.append('Authorization', `Bearer ${savedToken}`);
-        console.log("Token => " + JSON.stringify(myHeaders));
+        console.log("Here is the selected data of ITEM => " + JSON.stringify(tempAddField));
         const urlencoded = new FormData();
         urlencoded.append('user_id', userId);
         urlencoded.append('device_id', global.deviceId);
-        urlencoded.append('first_name', fname);
-        urlencoded.append('last_name', lname);
+        urlencoded.append('first_name', tempAddField.firstname);
+        urlencoded.append('last_name', tempAddField.lastname);
         urlencoded.append('address', userLocation.address);
         urlencoded.append('landmark', userLocation.landmark || '');
         urlencoded.append('city', userLocation.city);
@@ -649,7 +659,7 @@ const BagScreen = ({ navigation }) => {
         urlencoded.append('txt_status', '');
         urlencoded.append('cs_latitude', userLocation.Latitude);
         urlencoded.append('cs_longitude', userLocation.Longitude);
-        urlencoded.append('shipping_buil_flat_no', userLocation.address);
+        urlencoded.append('shipping_buil_flat_no', tempAddField.buil_flat_no);
         urlencoded.append('shipping_street_add', userLocation.address);
         urlencoded.append('mobile', mobile);
         // urlencoded.append('order_options', { "coupon": { "coupon_code": "", "coupon_type": "discount", "coupon_amount": 0 } });
@@ -661,67 +671,67 @@ const BagScreen = ({ navigation }) => {
           redirect: 'follow',
         };
         console.log("Result-0 =>> ");
-          fetch(BASE_URL + '/create-order', requestOptions)
-            .then(response => response.json())
-            .then((result) => {
-              console.log("Result-1 =>> " + JSON.stringify(result));
-              if (selected === 1) {
-                // callPaymentScreen(result?.order_ids[0], orderTotal, savedToken);
-                console.log("Result-2 =>> " + JSON.stringify(result));
-                const myHeaderPay = new Headers();
-                myHeaderPay.append("Accept", "application/json");
-                // myHeaderPay.append("Content-Type", "application/x-www-form-urlencoded");
-                myHeaderPay.append("Authorization", `Bearer ${savedToken}`);
-                console.log("OBJ ==> " + JSON.stringify({
-                  "order_id": result?.order_ids[0].toString(),
-                  "amount": totalSP.toString()
-                }));
-                const urlencodedPay = new FormData();
-                urlencodedPay.append("order_id", result?.order_ids[0]);
-                urlencodedPay.append("amount", totalSP);
-                urlencodedPay.append('user_id', userId);
-                const requestConfig = {
-                  method: "POST",
-                  headers: myHeaderPay,
-                  body: urlencodedPay,
-                  redirect: "follow"
-                };
+        fetch(BASE_URL + '/create-order', requestOptions)
+          .then(response => response.json())
+          .then((result) => {
+            console.log("Result-1 =>> " + JSON.stringify(result));
+            if (selected === 1) {
+              // callPaymentScreen(result?.order_ids[0], orderTotal, savedToken);
+              console.log("Result-2 =>> " + JSON.stringify(result));
+              const myHeaderPay = new Headers();
+              myHeaderPay.append("Accept", "application/json");
+              // myHeaderPay.append("Content-Type", "application/x-www-form-urlencoded");
+              myHeaderPay.append("Authorization", `Bearer ${savedToken}`);
+              console.log("OBJ ==> " + JSON.stringify({
+                "order_id": result?.order_ids[0].toString(),
+                "amount": totalSP.toString()
+              }));
+              const urlencodedPay = new FormData();
+              urlencodedPay.append("order_id", result?.order_ids[0]);
+              urlencodedPay.append("amount", totalSP);
+              urlencodedPay.append('user_id', userId);
+              const requestConfig = {
+                method: "POST",
+                headers: myHeaderPay,
+                body: urlencodedPay,
+                redirect: "follow"
+              };
 
-                fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
-                  .then((response) => response.json())
-                  .then((result) => {
-                    console.log("Result-3 =>> " + JSON.stringify(result));
-                    console.log("Amount Result ==> " + JSON.stringify(result));
-                    setPayModeModal(false);
-                    navigation.navigate('WebViewPage', { response: result });
-                  })
-                  .catch((error) => console.error(error));
-                setPayModeModal(false);
-                setLoading(false);
-              } else {
-                console.log("Result-4 =>> ");
-                if (result) {
-                  console.log("Result-5 =>> ");
+              fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
+                .then((response) => response.json())
+                .then((result) => {
+                  console.log("Result-3 =>> " + JSON.stringify(result));
+                  console.log("Amount Result ==> " + JSON.stringify(result));
                   setPayModeModal(false);
-                  navigation.replace('OrderSuccess', {
-                    payload: urlencoded,
-                    orderResponse: result,
-                    DeleiveryTime: DeleiveryTime
-                  });
-                } else {
-                  console.log("Result-6 =>> ");
-                  Alert.alert('Something went wrong');
-                  setPayModeModal(false);
-                }
-                setLoading(false);
-                setPayModeModal(false);
-              }
-            })
-            .catch(error => {
-              console.error("error is Order Create => " + JSON.stringify(error.message));
+                  navigation.navigate('WebViewPage', { response: result });
+                })
+                .catch((error) => console.error(error));
               setPayModeModal(false);
               setLoading(false);
-            });
+            } else {
+              console.log("Result-4 =>> ");
+              if (result) {
+                console.log("Result-5 =>> ");
+                setPayModeModal(false);
+                navigation.replace('OrderSuccess', {
+                  payload: urlencoded,
+                  orderResponse: result,
+                  DeleiveryTime: DeleiveryTime
+                });
+              } else {
+                console.log("Result-6 =>> ");
+                Alert.alert('Something went wrong');
+                setPayModeModal(false);
+              }
+              setLoading(false);
+              setPayModeModal(false);
+            }
+          })
+          .catch(error => {
+            console.error("error is Order Create => " + JSON.stringify(error.message));
+            setPayModeModal(false);
+            setLoading(false);
+          });
       } else {
         Alert.alert('Some selected products are not in service area, Please choose another address.');
       }
@@ -962,6 +972,8 @@ const BagScreen = ({ navigation }) => {
         }
 
         global.sellerId = ids;
+        locationDetails.id = ids;
+        console.log("Seller ID in Bag => " + ids);
         await AsyncStorage.setItem(
           'userCurrentLocation',
           JSON.stringify(locationDetails),
@@ -971,6 +983,7 @@ const BagScreen = ({ navigation }) => {
           'true',
         );
         await getUserAddress()
+        setTempAddField(item);
         setAddListModal(false);
         setisProceed(true)
       }}

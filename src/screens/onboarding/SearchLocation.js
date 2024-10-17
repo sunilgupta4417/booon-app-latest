@@ -184,7 +184,7 @@ const SearchLocation = ({ navigation }) => {
             locationDetails.Latitude = lati;
             locationDetails.Longitude = long;
             locationDetails.zipcode = locationDetails.postalCode;
-            locationDetails.sellerId = ids;
+            locationDetails.id = ids;
             global.sellerId = ids
             setShow(false)
             await AsyncStorage.setItem(
