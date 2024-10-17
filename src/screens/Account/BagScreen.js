@@ -315,7 +315,8 @@ const BagScreen = ({ navigation }) => {
       const time = moment(workStartTime, 'HH:mm:ss');
       time.add(travelTimeMinutes, 'minutes');
       const newTime = time.format('HH:mm A');
-      return `Delivery by ${tomorrow} at ${newTime}`;
+      return `Delivery at ${newTime}`;
+      //by ${tomorrow}
     }
   };
 

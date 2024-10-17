@@ -276,17 +276,29 @@ const SubCategory = ({ navigation, route: { params } }) => {
   // Function to sort sizes
   const sortSizes = (sizes) => {
     const sizeMap = { XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, '3XL': 7, '4XL': 8, '5XL': 9, '6XL': 10 };
+
+    const getSizeValue = (size) => {
+      const matches = size.match(/\d+/g);  // Find all digits in the string
+      return matches ? parseInt(matches[0], 10) : 0;  // Return the first matched number
+    };
+    const kidsSizes = sizes.filter(size => size.name.includes('Y'));
     const numericSizes = sizes.filter(size => !isNaN(size.name)).map(size => parseInt(size.name));
     const romanSizes = sizes.filter(size => sizeMap[size.name] || size.name.includes('XL'));
     numericSizes.sort((a, b) => a - b);
     romanSizes.sort((a, b) => sizeMap[a.name] - sizeMap[b.name]);
+    // Sort kids' sizes by extracting numeric values from the string
+    kidsSizes.sort((a, b) => getSizeValue(a.name) - getSizeValue(b.name));
+     
     return [
       ...numericSizes.map(size => ({ name: size.toString() })),
-      ...romanSizes
+      ...romanSizes,
+      ...kidsSizes
+  
     ];
   };
 
   const getFilter = async () => {
+    console.log("Hello i am global seller",global.sellerId)
     let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
     if (params?.cat_id) {
       url = url + `&cat_id=${params.cat_id}`;

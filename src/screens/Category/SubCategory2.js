@@ -141,6 +141,8 @@ const SubCategory2 = ({ navigation, route: { params } }) => {
   };
 
   const getFilter = async () => {
+   // console.log("Hello i am global seller2",global);
+    console.log("Hello i am global seller2",global.sellerId)
     let url = `${BASE_URL}/app-filter?seller_id=${global.sellerId}`;
     if (params?.cat_id) {
       url = url + `&cat_id=${params.cat_id}`;

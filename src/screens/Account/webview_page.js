@@ -13,8 +13,41 @@ AvenueParams = {
   ccavenue_payment_url: 'https://qasecure.ccavenue.com/transaction.do',
 };
 
+
+
 export default function WebViewPage({ route }) {
   console.log(route.params);
+
+  
+  const handleUrlLoading = (event) => {
+    console.log(event);
+    const { url } = event;
+    
+    if (url.includes('upi://pay?pa')) {
+      Linking.canOpenURL(url)
+        .then((supported) => {
+          if (supported) {
+         
+            Linking.openURL(url);
+          } else {
+          
+            ToastAndroid.show('UPI supported applications not found', ToastAndroid.LONG);
+            this.webviewRef.injectJavaScript(
+              'document.getElementsByClassName("intent-off")[0].click();'
+            );
+          }
+        })
+        .catch((err) => {
+          console.error("Error opening URL: ", err);
+        });
+
+      return false; 
+    }
+    
+    return true; 
+  };
+
+ 
 
   let web_url = AvenueParams.ccavenue_payment_url;
 
@@ -72,6 +105,8 @@ export default function WebViewPage({ route }) {
           //    injectedJavaScriptBeforeContentLoaded={pucJavaScript}
           scrollEnabled
           scalesPageToFit={false}
+          onShouldStartLoadWithRequest={handleUrlLoading}
+        
           //    originWhitelist={['*']}
           //   // injectedJavaScript={jsCode}
           //    onMessage={_onMessage}

@@ -211,7 +211,8 @@ const HomeScreen = ({ navigation }) => {
     // console.log("Stored location of the user  =>> " + userCurrentLocation);
     // console.log("Stored addressChange of the user  =>> " + addressChange);
     id = JSON.parse(userCurrentLocation)
-    global.sellerId = id.sellerId
+    global.sellerId = sellerId
+    //global.sellerId = id.sellerId
     setaddressChange(addressChanged)
     setCurrentLocation(JSON.parse(userCurrentLocation))
   }
@@ -235,6 +236,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.overlayWhite}>
           <Text style={styles.subtitle}>{item.title}</Text>
           <Text style={styles.subtitle2}>{item.detail}</Text>
+         
           <View
             style={{
               borderWidth: 1,
@@ -254,7 +256,7 @@ const HomeScreen = ({ navigation }) => {
                 lineHeight: 20,
                 color: '#000000',
               }}>
-              {item.title}
+              {item.code}
             </Text>
           </View>
         </View>

@@ -267,6 +267,8 @@ const ProductScreen = ({ navigation, route: { params } }) => {
   const addToBag = async () => {
     try {
       if (selectedSize || productSize.length == 0) {
+        console.log("Selected data",productDetail)
+       
         const savedToken = await AsyncStorage.getItem('token');
         setToken(savedToken);
         if (savedToken) {
@@ -304,15 +306,16 @@ const ProductScreen = ({ navigation, route: { params } }) => {
               options: {
                 Color: 'Black',
                 Size: selectedSize?.name,
-                SKU: productDetail?.product?.sku,
+                SKU: selectedSize?.size_sku_code,
                 EAN: selectedSize?.size_ean_no,
-                Fabric: productDetail?.product?.fabric,
+                Fabric: params?.item?.fabric,
               },
               distance: kilometers,
               shipping_charge: 10,
               delivery_time: roadDistance,
             };
             console.log('bodyAddCart ==>> ', body);
+            
             const response = await axios.post(`${BASE_URL}/add-in-cart`, body, {
               headers,
             });
@@ -505,7 +508,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
 
   let productSize = productDetail?.product_size || [];
 
-  const order = ['S', 'M', 'L', 'XL', 'XXL'];
+  const order = ['S', 'M', 'L', 'XL', 'XXL','3XL','4XL','5XL','6XL','10-11Y','12-13Y'];
 
   productSize.sort((a, b) => {
     return order.indexOf(a.name) - order.indexOf(b.name);
@@ -569,7 +572,7 @@ const ProductScreen = ({ navigation, route: { params } }) => {
       let travelTimeMinutes = 120; // Base time of 2 hours (120 minutes)
 
       if (distanceKm > 20) {
-        const extraDistance = distanceKm - 20;
+        const extraDistance = distanceKm - 15;
         const additionalTime = extraDistance * 8; // 8 minutes per km over 15 km
         travelTimeMinutes += additionalTime;
       }
