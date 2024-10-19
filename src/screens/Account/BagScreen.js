@@ -296,39 +296,33 @@ const BagScreen = ({ navigation }) => {
     const hour = nowDate.getHours().toString().padStart(2, '0');
     const minute = nowDate.getMinutes().toString().padStart(2, '0');
     const currentTime = `${hour}:${minute}:00`;
-    const currentCheckTime = moment();
+    //const currentCheckTime = moment();
 
 
     let timeDiff = isTimeBetween(currentTime, workStartTime, workEndTime);
-    if (currentCheckTime.isBetween(workStartTime, workEndTime)) {
+    if(timeDiff){
+   // if (currentCheckTime.isBetween(workStartTime, workEndTime)) {
       return `Delivery in ${hours.toFixed(0)} hours and ${minutes.toFixed(0)} minutes`;
     } else {
       // Get the current hour
-      const currentHour = moment();
+    //  const currentHour = moment();
 
-      let tomorrow;
-
-      const startOfDay = moment().startOf('day');
-      const sixAM = moment().startOf('day').add(6, 'hours').format('x');
-      const time = moment(workStartTime, 'HH:mm:ss');
-      time.add(travelTimeMinutes, 'minutes');
-      const newTime = time.format('HH:mm A');
-
-      console.log("Time is =>> " + startOfDay, sixAM, currentHour.isBetween(moment(startOfDay), moment(sixAM), null, '(]'));
-
-      if (currentHour.isBetween(startOfDay, sixAM)) {
-        tomorrow = moment().format('DD MMM, YYYY');
-        return `Delivery at ${newTime}`;
-      } else {
-        tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
-        return `Delivery by ${tomorrow} at ${newTime}`;
-      }
-
-
-
-
-      // by ${tomorrow}newTime
+    let tomorrow;
+    if (currentHour >= 0 && currentHour < 6) {
+      // If current time is between 12 AM and 6 AM, don't add a day
+      tomorrow = moment().format('DD MMM, YYYY');
+    } else {
+      // If current time is outside 12 AM to 6 AM, add a day
+      tomorrow = moment().add(1, 'day').format('DD MMM, YYYY');
     }
+
+    const time = moment(workStartTime, 'HH:mm:ss');
+    time.add(travelTimeMinutes, 'minutes');
+    const newTime = time.format('HH:mm A');
+    return `Delivery at ${newTime}`;
+    //by ${tomorrow}
+  }
+
   };
 
 

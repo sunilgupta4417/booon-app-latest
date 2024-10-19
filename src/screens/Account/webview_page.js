@@ -1,7 +1,8 @@
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import React from 'react';
+import {React, useRef } from 'react';
 import WebView from 'react-native-webview';
 import CustomHeader from '../../components/CustomHeader';
+import { Linking, ToastAndroid } from 'react-native';
 
 
 AvenueParams = {
@@ -16,23 +17,22 @@ AvenueParams = {
 
 
 export default function WebViewPage({ route }) {
+  const webviewRef = useRef(null);
   console.log(route.params);
 
   
   const handleUrlLoading = (event) => {
-    console.log(event);
     const { url } = event;
-    
+    console.log(url);
+
     if (url.includes('upi://pay?pa')) {
       Linking.canOpenURL(url)
         .then((supported) => {
           if (supported) {
-         
             Linking.openURL(url);
           } else {
-          
             ToastAndroid.show('UPI supported applications not found', ToastAndroid.LONG);
-            this.webviewRef.injectJavaScript(
+            webviewRef.current.injectJavaScript(
               'document.getElementsByClassName("intent-off")[0].click();'
             );
           }
@@ -41,10 +41,10 @@ export default function WebViewPage({ route }) {
           console.error("Error opening URL: ", err);
         });
 
-      return false; 
+      return false; // Prevent WebView from loading the URL
     }
-    
-    return true; 
+
+    return true; // Allow WebView to load the URL
   };
 
  

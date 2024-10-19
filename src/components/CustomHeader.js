@@ -41,7 +41,7 @@ const CustomHeader = ({title, onPress, back, search, wishlist, bag}) => {
                 marginRight: 12,
                 marginVertical: 5,
               }}
-              source={require('../assets/Search.png')}
+            //  source={require('../assets/Search.png')}
             />
           </TouchableOpacity>
         )}
