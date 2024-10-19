@@ -355,7 +355,7 @@ const SearchLocation = ({ navigation }) => {
           setNoLocation(true)
           return;
         }
-        locationDetails.sellerId = ids;
+        locationDetails.id = ids;
         global.sellerId = ids;
         setShow(false)
         await AsyncStorage.setItem(
