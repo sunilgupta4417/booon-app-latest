@@ -328,8 +328,6 @@ const BagScreen = ({ navigation }) => {
     //by ${tomorrow}
   }
 
-  };
-
 
   const cartProductView = ({ item, index }) => (
     <View style={[styles.row, { width: "100%", borderWidth: 0, marginVertical: 10 }]}>
