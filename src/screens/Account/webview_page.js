@@ -25,7 +25,12 @@ export default function WebViewPage({ route }) {
     const { url } = event;
     console.log(url);
 
-    if (url.includes('upi://pay?pa')) {
+    if ( url.includes('phonepe://pay?') ||
+    url.includes('tez://upi/pay?') ||
+    url.includes('paytmmp://pay?') ||
+    url.includes('bhim://pay?pa') ||
+    url.includes('cred://pay?pa') ||
+    url.includes('upi://pay?pa')) {
       Linking.canOpenURL(url)
         .then((supported) => {
           if (supported) {
