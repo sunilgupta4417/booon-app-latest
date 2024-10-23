@@ -92,6 +92,88 @@ const Account = ({ navigation }) => {
     navigation.navigate('GetStarted');
   };
 
+  const renderLiveStatus = (orderStatusCode, returnQty) => {
+    switch (orderStatusCode) {
+      case 2:
+        if (returnQty > 0) {
+          return 'Return Processing';
+        } else {
+          return 'Processing';
+        }
+
+      case 3:
+        if (returnQty > 0) {
+          return 'Return Completed';
+        } else {
+          return 'Completed';
+        }
+
+      case 4:
+        if (returnQty > 0) {
+          return 'Return Delivered';
+        } else {
+          return 'Delivered';
+        }
+
+      case 5:
+        if (returnQty > 0) {
+          return 'Return Approved';
+        } else {
+          return 'Approved';
+        }
+
+      case 7:
+        if (returnQty > 0) {
+          return 'Return Cancelled';
+        } else {
+          return 'Cancelled';
+        }
+
+      case 8:
+        if (returnQty > 0) {
+          return 'Return Ready To Shipped';
+        } else {
+          return 'Ready To Shipped';
+        }
+
+      case 10:
+        if (returnQty > 0) {
+          return 'Return Courier Arrived';
+        } else {
+          return 'Courier Arrived';
+        }
+
+      case 11:
+        if (returnQty > 0) {
+          return 'Return Courier Departed';
+        } else {
+          return 'Courier Departed';
+        }
+
+      case 12:
+        if (returnQty > 0) {
+          return 'Return On The Way';
+        } else {
+          return 'On The Way';
+        }
+
+      case 13:
+        if (returnQty > 0) {
+          return 'Return RTO';
+        } else {
+          return 'RTO';
+        }
+
+      case 14:
+        if (returnQty > 0) {
+          return 'Return RTO Deliverd';
+        } else {
+          return 'RTO Deliverd';
+        }
+    }
+  };
+
+
   const renderLiveOrderItem = ({ item }) => (
     <View
       style={[
@@ -100,7 +182,7 @@ const Account = ({ navigation }) => {
         { marginVertical: 0, borderBottomWidth: 1, borderBottomColor: '#DEDEE0' },
       ]}>
       <Image
-        style={{ width: responsiveWidth(89), height: responsiveWidth(118) }}
+        style={{ width: responsiveWidth(89), height: responsiveWidth(150) }}
         source={{ uri: item?.product_image }}
       />
       <View style={{ paddingLeft: 10, flexGrow: 1 }}>
@@ -131,6 +213,45 @@ const Account = ({ navigation }) => {
           </Text>{' '} */}
           {/* <Text style={{ color: '#5EB160' }}> 40% OFF</Text> */}
         </Text>
+        <Text
+              style={{
+                color: 'black',
+                fontSize: 14,
+                fontFamily: 'Poppins',
+                
+                borderColor:"black",
+               
+                marginBottom:2,
+                 /* item?.order_status == 2 ||
+                  item?.order_status == 3 ||
+                  item?.order_status == 4 ||
+                  item?.order_status == 8 ||
+                  item?.order_status == 10 ||
+                  item?.order_status == 11 ||
+                  item?.order_status == 12 ||
+                  item?.order_status == 13 ||
+                  item?.order_status == 14
+                    ? 'white'
+                    : 'red',*/
+                //textAlign: 'center',
+               // paddingVertical: 5,
+               // paddingHorizontal:5,
+                borderRadius: 30,
+                maxWidth: 'auto',
+                marginTop: 5,
+              }}>
+            Status: {renderLiveStatus(item?.order_status, item?.return_qty)}{' '}
+              {/* <Text
+                                style={{
+                                    fontWeight: '400',
+                                    color: '#64646D99',
+                                    textDecorationLine: 'line-through',
+                                }}>
+                                {' '}
+                                ₹{item?.product_subtotal}{' '}
+                            </Text>{' '} */}
+              {/* <Text style={{ color: '#5EB160' }}> 40% OFF</Text> */}
+            </Text>
         {item?.customer_tracking_url &&
           <TouchableOpacity style={{ alignSelf: 'flex-start', paddingHorizontal: 20, backgroundColor: '#000', borderRadius: 30, alignItems: 'center', paddingVertical: 10 }} onPress={() => enableTrackModal(item?.customer_tracking_url)}>
             <Text style={{ color: '#fff' }}>Track Order</Text>
