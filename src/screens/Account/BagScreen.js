@@ -695,6 +695,7 @@ const BagScreen = ({ navigation }) => {
               };
 
               fetch("https://apistaging.booon.in/api/ccavenue-order", requestConfig)
+           // fetch("https://api.booon.in/api/ccavenue-order", requestConfig)
                 .then((response) => response.json())
                 .then((result) => {
                   console.log("Result-3 =>> " + JSON.stringify(result));
