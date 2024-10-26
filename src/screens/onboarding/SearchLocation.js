@@ -32,6 +32,8 @@ import { promptForEnableLocationIfNeeded } from 'react-native-android-location-e
 import { haversineDistance } from '../../helpers/phoneValidator';
 import { useSelector } from 'react-redux';
 import { AddressContainer } from '../../components/AddressContainer';
+import { requestTrackingPermission } from 'react-native-tracking-transparency';
+
 
 const SearchLocation = ({ navigation }) => {
   const currentLatLong = useRef({});
@@ -57,18 +59,27 @@ const SearchLocation = ({ navigation }) => {
   };
 
   const getUserLocation = async () => {
-    const enableResult = await promptForEnableLocationIfNeeded();
-    if (enableResult == 'already-enabled' || enableResult == 'enabled') {
-      Geolocation.getCurrentPosition(async position => {
-        const latitude = position?.coords?.latitude;
-        const longitude = position?.coords?.longitude;
-        currentLatLong.current = {
-          longitude,
-          latitude,
-        };
-      });
+    if(Platform.OS === 'android'){
+      const enableResult = await promptForEnableLocationIfNeeded();
+      if (enableResult == 'already-enabled' || enableResult == 'enabled') {
+        Geolocation.getCurrentPosition(async position => {
+          const latitude = position?.coords?.latitude;
+          const longitude = position?.coords?.longitude;
+          currentLatLong.current = {
+            longitude,
+            latitude,
+          };
+        });
+      }
+    }else if(Platform.OS === 'ios'){
+      console.log("In IOS")
+      const trackingStatus = await requestTrackingPermission();
+      if (trackingStatus === 'authorized' || trackingStatus === 'unavailable') {
+        Geolocation.requestAuthorization("whenInUse"); // This returns 'granted', 'denied', 'restricted', or 'always'
+      } 
     }
   };
+
   useEffect(() => {
     getUserLocation();
   }, []);

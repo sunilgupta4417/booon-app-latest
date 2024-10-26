@@ -18,6 +18,7 @@ import { Google_Api_Key } from '../../config';
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import { haversineDistance } from '../../helpers/phoneValidator';
+import { requestTrackingPermission } from 'react-native-tracking-transparency';
 
 const { width } = Dimensions.get('window');
 
@@ -147,6 +148,21 @@ const SelectLocation = ({ navigation }) => {
       },
     );
   };
+
+
+  const getAutoUserLocation = async() => {
+    if (Platform.OS === 'ios') {
+      console.log("In IOS")
+      const trackingStatus = await requestTrackingPermission();
+      if (trackingStatus === 'authorized' || trackingStatus === 'unavailable') {
+        Geolocation.requestAuthorization("whenInUse"); // This returns 'granted', 'denied', 'restricted', or 'always'
+      }
+    }
+  }
+
+  React.useEffect(() => {
+    getAutoUserLocation();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
